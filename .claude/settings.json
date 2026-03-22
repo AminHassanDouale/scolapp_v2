@@ -28,7 +28,11 @@
       "Bash(php artisan route:list --path=admin/parametres)",
       "Bash(php artisan tinker --execute=\"echo Schema::hasColumn\\(''schools'', ''logo''\\) ? ''logo column EXISTS'' : ''logo column MISSING'';\")",
       "Bash(php artisan storage:link)",
-      "Bash(php artisan tinker --execute=\"echo config\\(''filesystems.default''\\); echo ''\\\\n''; print_r\\(config\\(''filesystems.disks.public''\\)\\);\")"
+      "Bash(php artisan tinker --execute=\"echo config\\(''filesystems.default''\\); echo ''\\\\n''; print_r\\(config\\(''filesystems.disks.public''\\)\\);\")",
+      "Bash(composer require laravel/sanctum --no-interaction)",
+      "Bash(composer require laravel/sanctum --ignore-platform-req=ext-exif --no-interaction)",
+      "Bash(php artisan vendor:publish --provider=\"Laravel\\\\Sanctum\\\\SanctumServiceProvider\" --no-interaction)",
+      "Bash(php artisan migrate --no-interaction)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Thinkpad\\.claude\\projects\\c--Users-Thinkpad-Documents-2099-scolapp-v2"
