@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ContactController;
 use App\Models\Attachment;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -10,7 +11,8 @@ use Livewire\Volt\Volt;
 | Public
 |--------------------------------------------------------------------------
 */
-Route::get('/', fn () => redirect()->route('login'));
+Route::get('/', fn () => view('welcome'))->name('home');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 /*
 |--------------------------------------------------------------------------

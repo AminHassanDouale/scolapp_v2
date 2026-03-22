@@ -32,7 +32,11 @@
       "Bash(composer require laravel/sanctum --no-interaction)",
       "Bash(composer require laravel/sanctum --ignore-platform-req=ext-exif --no-interaction)",
       "Bash(php artisan vendor:publish --provider=\"Laravel\\\\Sanctum\\\\SanctumServiceProvider\" --no-interaction)",
-      "Bash(php artisan migrate --no-interaction)"
+      "Bash(php artisan migrate --no-interaction)",
+      "WebFetch(domain:naqrat.sa)",
+      "Bash(php artisan route:list --name=home)",
+      "Bash(php artisan tinker --execute=\"echo view\\(''welcome''\\)->render\\(\\) ? ''OK'' : ''FAIL'';\")",
+      "Bash(php artisan make:migration create_contact_messages_table --no-interaction)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Thinkpad\\.claude\\projects\\c--Users-Thinkpad-Documents-2099-scolapp-v2"
