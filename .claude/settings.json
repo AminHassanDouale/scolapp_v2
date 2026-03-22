@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan make:volt \"admin/settings/device-tokens\" --class)",
+      "Bash(php -r \":*)",
+      "Bash(php artisan route:list --name=settings)",
+      "Bash(php artisan make:migration drop_first_last_name_from_users_table)",
+      "Bash(php artisan db:table users)",
+      "Bash(ls \"c:\\\\Users\\\\Thinkpad\\\\Documents\\\\2099\\\\New folder\\\\database\\\\migrations\"\" | grep -E \"students)",
+      "Bash(teachers)",
+      "Bash(guardians \")",
+      "Bash(php -v)",
+      "Bash(head -10 grep -rn \"redirectGuestsTo\\\\|handleUnauthenticated\" \"c:/Users/Thinkpad/Documents/2099/New folder/bootstrap\" --include=\"*.php\")",
+      "Bash(php -l \"c:/Users/Thinkpad/Documents/2099/New folder/app/Mail/InvoiceGeneratedMail.php\")",
+      "Bash(php -l \"c:/Users/Thinkpad/Documents/2099/New folder/app/Models/DeviceToken.php\")",
+      "Bash(grep -rn \"sum\\(''amount''\\)\\\\|where\\(''status'', ''unpaid''\\)\\\\|invoice->amount\" \"c:/Users/Thinkpad/Documents/2099/New folder/resources/views/livewire/portals/\")",
+      "Bash(php -l \"c:/Users/Thinkpad/Documents/2099/New folder/resources/views/livewire/portals/guardian/invoices.blade.php\")",
+      "Bash(php -l \"c:/Users/Thinkpad/Documents/2099/New folder/resources/views/livewire/portals/guardian/invoice-print.blade.php\")",
+      "Bash(python fix_logos.py)",
+      "Bash(php artisan migrate --path=database/migrations/2026_03_01_000001_add_saas_fields_to_schools_table.php)",
+      "Bash(php artisan permission:cache-reset)",
+      "Bash(php artisan db:seed --class=DatabaseSeeder)",
+      "Bash(xargs wc -l)",
+      "Bash(grep -E \"\\\\.\\(blade\\\\.php|php\\)$\")",
+      "WebFetch(domain:www.petitsfutes.org)",
+      "Bash(php artisan route:list --path=admin/finance)",
+      "Bash(php artisan route:list --path=admin/assessments)",
+      "Bash(php artisan route:list --path=admin/parametres)",
+      "Bash(php artisan tinker --execute=\"echo Schema::hasColumn\\(''schools'', ''logo''\\) ? ''logo column EXISTS'' : ''logo column MISSING'';\")",
+      "Bash(php artisan storage:link)",
+      "Bash(php artisan tinker --execute=\"echo config\\(''filesystems.default''\\); echo ''\\\\n''; print_r\\(config\\(''filesystems.disks.public''\\)\\);\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Thinkpad\\.claude\\projects\\c--Users-Thinkpad-Documents-2099-scolapp-v2"
+    ]
+  }
+}
