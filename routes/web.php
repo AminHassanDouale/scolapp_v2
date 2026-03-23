@@ -38,7 +38,7 @@ Route::get('/locale/{locale}', function (string $locale) {
 Volt::route('/login',  'pages.auth.login')->middleware('guest')->name('login');
 Volt::route('/signup', 'pages.auth.register')->middleware('guest')->name('register');
 
-Route::post('/logout', function () {
+Route::match(['get', 'post'], '/logout', function () {
     auth()->logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
