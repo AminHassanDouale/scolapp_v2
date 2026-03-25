@@ -4,6 +4,7 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Rule;
 use Mary\Traits\Toast;
 use App\Models\AcademicYear;
+use App\Models\DmoneyTransaction;
 use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\Payment;
@@ -11,6 +12,8 @@ use App\Models\PaymentAllocation;
 use App\Models\School;
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentStatus;
+use App\Services\BillingApiService;
+use Illuminate\Support\Facades\Log;
 
 new #[Layout('layouts.guardian')] class extends Component {
     use Toast;
@@ -20,7 +23,7 @@ new #[Layout('layouts.guardian')] class extends Component {
     public string  $statusFilter    = '';
     public bool    $showPayModal    = false;
     public ?int    $payInvoiceId    = null;
-    public string  $payMethod       = 'd_money';
+    public string  $payMethod       = 'waafi';
     public float   $payAmount       = 0;
 
     #[Rule('required|string|min:4|max:100')]
@@ -51,7 +54,7 @@ new #[Layout('layouts.guardian')] class extends Component {
         $this->payAmount         = (float) $invoice->balance_due;
         $this->payTransactionRef = '';
         $this->payPhone          = '';
-        $this->payMethod         = 'd_money';
+        $this->payMethod         = 'waafi';
         $this->showPayModal      = true;
         $this->resetErrorBag();
     }
@@ -63,12 +66,87 @@ new #[Layout('layouts.guardian')] class extends Component {
         $this->resetErrorBag();
     }
 
+    // ── D-Money Online Payment ─────────────────────────────────────────────────
+
+    public function initiateDMoney(int $invoiceId): mixed
+    {
+        $invoice = Invoice::find($invoiceId);
+
+        if (! $invoice || in_array($invoice->status, [InvoiceStatus::PAID, InvoiceStatus::CANCELLED])) {
+            $this->error('Facture non disponible.', position: 'toast-top toast-center');
+            return null;
+        }
+
+        if ($invoice->balance_due <= 0) {
+            $this->error('Aucun montant dû sur cette facture.', position: 'toast-top toast-center');
+            return null;
+        }
+
+        // Block if a pending D-Money transaction already exists for this invoice
+        $existing = DmoneyTransaction::where('invoice_id', $invoiceId)
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($existing) {
+            $this->warning(
+                'Un paiement D-Money est déjà en cours pour cette facture.',
+                'Veuillez attendre la confirmation.',
+                position: 'toast-top toast-center',
+                timeout: 5000
+            );
+            return null;
+        }
+
+        try {
+            $successUrl = route('dmoney.success');
+            $cancelUrl  = route('dmoney.cancel');
+
+            /** @var BillingApiService $billing */
+            $billing = app(BillingApiService::class);
+            $result  = $billing->createInvoicePayment(
+                (int) $invoice->balance_due,
+                $successUrl,
+                $cancelUrl
+            );
+
+            DmoneyTransaction::create([
+                'school_id'              => $invoice->school_id,
+                'invoice_id'             => $invoice->id,
+                'student_id'             => $invoice->student_id,
+                'user_id'                => auth()->id(),
+                'billing_subscription_id'=> (string) ($result['subscription_id'] ?? ''),
+                'order_id'               => $result['order_id'],
+                'checkout_url'           => $result['checkout_url'],
+                'amount'                 => (int) $invoice->balance_due,
+                'currency'               => 'DJF',
+                'status'                 => 'pending',
+            ]);
+
+            return redirect()->away($result['checkout_url']);
+
+        } catch (\Throwable $e) {
+            Log::error('D-Money payment initiation failed', [
+                'invoice_id' => $invoiceId,
+                'error'      => $e->getMessage(),
+            ]);
+            $this->error(
+                'Paiement D-Money indisponible',
+                'Veuillez réessayer ou contacter le support.',
+                position: 'toast-top toast-center',
+                timeout: 6000
+            );
+            return null;
+        }
+    }
+
+    // ── Manual Payment ─────────────────────────────────────────────────────────
+
     public function submitPayment(): void
     {
         $this->validate([
             'payTransactionRef' => 'required|string|min:4|max:100',
             'payPhone'          => 'required|string|min:8|max:20',
-            'payMethod'         => 'required|in:d_money,waafi,cac_pay,e_dahab',
+            'payMethod'         => 'required|in:waafi,cac_pay,e_dahab',
         ]);
 
         $invoice = Invoice::with('enrollment')->find($this->payInvoiceId);
@@ -333,11 +411,34 @@ new #[Layout('layouts.guardian')] class extends Component {
         {{-- Actions --}}
         <div class="flex items-center gap-2 px-4 pb-4 pt-1 flex-wrap">
             @if($canPay)
+            {{-- D-Money Online (API) --}}
+            @php
+                $hasPendingDmoney = \App\Models\DmoneyTransaction::where('invoice_id', $invoice->id)
+                    ->where('status', 'pending')->exists();
+            @endphp
+            @if($hasPendingDmoney)
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-warning/10 text-warning border border-warning/30">
+                <x-icon name="o-clock" class="w-3.5 h-3.5" />
+                D-Money en attente…
+            </span>
+            @else
             <x-button
-                label="Payer en ligne"
+                label="Payer via D-Money"
+                icon="o-device-phone-mobile"
+                wire:click="initiateDMoney({{ $invoice->id }})"
+                wire:loading.attr="disabled"
+                wire:target="initiateDMoney({{ $invoice->id }})"
+                class="btn-success btn-sm"
+                spinner="initiateDMoney({{ $invoice->id }})"
+            />
+            @endif
+
+            {{-- Other providers — manual flow --}}
+            <x-button
+                label="Autre paiement"
                 icon="o-credit-card"
                 wire:click="openPayModal({{ $invoice->id }})"
-                class="btn-primary btn-sm"
+                class="btn-ghost btn-sm"
             />
             @endif
 
@@ -409,10 +510,16 @@ new #[Layout('layouts.guardian')] class extends Component {
             <p class="text-xs text-base-content/50 mt-1">{{ $payInvoice->reference }} · {{ $payInvoice->invoice_type?->label() }}</p>
         </div>
 
+        {{-- D-Money info banner in manual modal --}}
+        <div class="mb-4 p-3 rounded-xl flex items-start gap-2 bg-success/8 border border-success/25 text-xs text-success">
+            <x-icon name="o-information-circle" class="w-4 h-4 shrink-0 mt-0.5" />
+            <span>Pour <strong>D-Money</strong>, utilisez le bouton <strong>"Payer via D-Money"</strong> directement sur la facture — paiement en ligne automatique.</span>
+        </div>
+
         {{-- Step 1: Choose method --}}
         <p class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2">1. Choisissez votre opérateur</p>
         <div class="grid grid-cols-2 gap-2 mb-4">
-            @foreach(['d_money' => ['label' => 'D-Money', 'icon' => 'o-device-phone-mobile', 'color' => 'from-blue-500 to-blue-700'], 'waafi' => ['label' => 'Waafi', 'icon' => 'o-device-phone-mobile', 'color' => 'from-green-500 to-green-700'], 'cac_pay' => ['label' => 'Cac Pay', 'icon' => 'o-credit-card', 'color' => 'from-red-500 to-red-700'], 'e_dahab' => ['label' => 'E-Dahab', 'icon' => 'o-banknotes', 'color' => 'from-yellow-500 to-amber-600']] as $key => $info)
+            @foreach(['waafi' => ['label' => 'Waafi', 'icon' => 'o-device-phone-mobile', 'color' => 'from-green-500 to-green-700'], 'cac_pay' => ['label' => 'Cac Pay', 'icon' => 'o-credit-card', 'color' => 'from-red-500 to-red-700'], 'e_dahab' => ['label' => 'E-Dahab', 'icon' => 'o-banknotes', 'color' => 'from-yellow-500 to-amber-600']] as $key => $info)
             <button wire:click="$set('payMethod', '{{ $key }}')"
                 class="flex items-center gap-2 p-3 rounded-xl border-2 transition-all
                     {{ $payMethod === $key ? 'border-primary bg-primary/10 shadow-sm' : 'border-base-200 hover:border-primary/40' }}">

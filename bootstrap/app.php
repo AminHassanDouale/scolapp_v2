@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
         ]);
 
+        // ── CSRF exclusions ────────────────────────────────────────────────────
+        $middleware->validateCsrfTokens(except: [
+            'webhooks/billing',
+        ]);
+
         // ── Middleware aliases ─────────────────────────────────────────────────
         $middleware->alias([
             'role'               => \Spatie\Permission\Middleware\RoleMiddleware::class,

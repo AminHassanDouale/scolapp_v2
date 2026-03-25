@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DMoneyPaymentController;
+use App\Http\Controllers\WebhookController;
 use App\Models\Attachment;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -13,6 +15,13 @@ use Livewire\Volt\Volt;
 */
 Route::get('/', fn () => view('welcome'))->name('home');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+/*
+|--------------------------------------------------------------------------
+| Webhooks (no CSRF, no auth)
+|--------------------------------------------------------------------------
+*/
+Route::post('/webhooks/billing', [WebhookController::class, 'handle'])->name('webhooks.billing');
 
 /*
 |--------------------------------------------------------------------------
@@ -265,7 +274,15 @@ Route::middleware(['auth', 'role:super-admin|admin|director|accountant', 'school
             Volt::route('/utilisateurs', 'admin.settings.users')->middleware('can:settings.users.view')->name('users');
             Volt::route('/roles',        'admin.settings.roles')->middleware('can:settings.roles.view')->name('roles');
             Volt::route('/appareils',    'admin.settings.device-tokens')->middleware('can:settings.users.view')->name('device-tokens');
+            Volt::route('/facturation',  'admin.settings.billing-api')->middleware('can:settings.school.view')->name('billing-api');
         });
+
+        // ── Billing / D-Money transactions ────────────────────────────────────
+        Route::middleware('can:payments.view')
+            ->prefix('facturation')->name('billing.')
+            ->group(function () {
+                Volt::route('/', 'admin.billing.index')->name('index');
+            });
     });
 
 /*
@@ -313,6 +330,8 @@ Route::middleware(['auth', 'role:guardian|super-admin|admin', 'school.active'])
         Volt::route('/notes',                 'portals.guardian.grades')->name('grades');
         Volt::route('/factures',              'portals.guardian.invoices')->name('invoices');
         Volt::route('/factures/{uuid}/print', 'portals.guardian.invoice-print')->name('invoices.print');
+        Route::get('/paiement/succes',  [DMoneyPaymentController::class, 'success'])->name('dmoney.success');
+        Route::get('/paiement/annule',  [DMoneyPaymentController::class, 'cancel'])->name('dmoney.cancel');
         Volt::route('/annonces',              'portals.guardian.announcements')->name('announcements');
         Volt::route('/messages',              'portals.guardian.messages')->name('messages');
         Volt::route('/messages/{uuid}',       'portals.guardian.message-thread')->name('messages.thread');
