@@ -138,7 +138,7 @@ class BillingApiService
             $orderId,
             $notifyUrl,
             $redirectUrl,
-            'fr'
+            'en'
         );
     }
 }
