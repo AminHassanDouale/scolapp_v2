@@ -17,10 +17,11 @@ return [
     'api_key'    => env('BILLING_API_KEY', ''),
 
     /*
-    | URL where D-Money posts payment notifications (must be public HTTPS).
-    | Set in .env for production: BILLING_NOTIFY_URL=https://scolapp.com/webhooks/billing
+    | URL where D-Money posts payment notifications.
+    | D-Money POSTs here; the gateway saves it to MySQL.
+    | Laravel then polls GET /payment/notify/{order_id} to read the status.
     */
-    'notify_url' => env('BILLING_NOTIFY_URL', 'https://scolapp.com/webhooks/billing'),
+    'notify_url' => env('BILLING_NOTIFY_URL', 'https://api.scolapp.com/payment/notify'),
 
     'timeout' => 30,
 

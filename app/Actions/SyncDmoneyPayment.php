@@ -30,23 +30,38 @@ class SyncDmoneyPayment
             return false;
         }
 
-        // Fetch live status from D-Money if not supplied
+        $billing = app(BillingApiService::class);
+
+        // Fetch status — prefer the gateway DB (avoids D-Money rate limits),
+        // fall back to live queryPayment if no notification received yet.
         if (empty($queryData)) {
             try {
-                $queryData = app(BillingApiService::class)->queryPayment($orderId);
-            } catch (\Throwable $e) {
-                Log::warning('SyncDmoneyPayment: queryPayment failed', [
-                    'order_id' => $orderId,
-                    'error'    => $e->getMessage(),
-                ]);
-                return false;
+                $notify = $billing->getNotification($orderId);
+                if (! empty($notify['latest_status'])) {
+                    $queryData = ['trade_status' => $notify['latest_status']];
+                }
+            } catch (\Throwable) {
+                // gateway notification not available yet
+            }
+
+            if (empty($queryData)) {
+                try {
+                    $queryData = $billing->queryPayment($orderId);
+                } catch (\Throwable $e) {
+                    Log::warning('SyncDmoneyPayment: queryPayment failed', [
+                        'order_id' => $orderId,
+                        'error'    => $e->getMessage(),
+                    ]);
+                    return false;
+                }
             }
         }
 
         $tradeStatus = strtolower($queryData['trade_status'] ?? '');
 
-        $successStatuses  = ['completed', 'success', 'paid'];
-        $failedStatuses   = ['failed', 'canceled', 'cancelled', 'expired'];
+        // D-Money actual values: Completed, Failure, Expired, Paying
+        $successStatuses = ['completed', 'success', 'paid'];
+        $failedStatuses  = ['failure', 'failed', 'expired', 'canceled', 'cancelled'];
 
         if (in_array($tradeStatus, $failedStatuses)) {
             $tx->update([
