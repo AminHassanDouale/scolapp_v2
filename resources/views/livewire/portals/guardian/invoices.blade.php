@@ -125,7 +125,7 @@ new #[Layout('layouts.guardian')] class extends Component {
                 'status'                 => 'pending',
             ]);
 
-            $this->dispatch('open-checkout', url: $result['checkout_url']);
+            $this->redirect($result['checkout_url']);
 
         } catch (\Throwable $e) {
             Log::error('D-Money payment initiation failed', [
@@ -260,8 +260,7 @@ new #[Layout('layouts.guardian')] class extends Component {
      wire:poll.30000ms
      x-data="{ pending: {{ $hasPendingDmoney ? 'true' : 'false' }}, fastPoll: null }"
      x-init="if (pending) { fastPoll = setInterval(() => $wire.$refresh(), 5000) }"
-     x-effect="if (!pending && fastPoll) { clearInterval(fastPoll); fastPoll = null }"
-     @open-checkout.window="window.open($event.detail.url, '_blank', 'noopener,noreferrer')">
+     x-effect="if (!pending && fastPoll) { clearInterval(fastPoll); fastPoll = null }">
 
     <x-header title="Mes Factures" subtitle="Suivi des paiements" separator>
         <x-slot:actions>
