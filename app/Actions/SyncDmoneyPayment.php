@@ -59,9 +59,9 @@ class SyncDmoneyPayment
 
         $tradeStatus = strtolower($queryData['trade_status'] ?? '');
 
-        // D-Money actual values: Completed, Failure, Expired, Paying
-        $successStatuses = ['completed', 'success', 'paid'];
-        $failedStatuses  = ['failure', 'failed', 'expired', 'canceled', 'cancelled'];
+        // D-Money actual values: trade_status (webhook) or order_status (query)
+        $successStatuses = ['completed', 'success', 'paid', 'pay_success'];
+        $failedStatuses  = ['failure', 'failed', 'expired', 'canceled', 'cancelled', 'pay_fail'];
 
         if (in_array($tradeStatus, $failedStatuses)) {
             $tx->update([

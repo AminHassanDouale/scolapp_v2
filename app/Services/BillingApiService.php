@@ -96,10 +96,22 @@ class BillingApiService
      */
     public function queryPayment(string $orderId): array
     {
-        $r = $this->http->post(config('billing.endpoints.payment_query'), [
+        $r    = $this->http->post(config('billing.endpoints.payment_query'), [
             'json' => ['merch_order_id' => $orderId],
         ]);
-        return json_decode($r->getBody()->getContents(), true) ?? [];
+        $data = json_decode($r->getBody()->getContents(), true) ?? [];
+
+        // Normalize: the gateway wraps the status inside biz_content.order_status
+        // Map it to trade_status so the rest of the code works uniformly.
+        $biz = $data['biz_content'] ?? [];
+        if (! empty($biz)) {
+            $data = array_merge($data, $biz);
+            if (empty($data['trade_status']) && ! empty($biz['order_status'])) {
+                $data['trade_status'] = $biz['order_status'];
+            }
+        }
+
+        return $data;
     }
 
     /**
