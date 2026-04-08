@@ -12,6 +12,7 @@ use App\Models\PaymentAllocation;
 use App\Models\School;
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentStatus;
+use App\Actions\SyncDmoneyPayment;
 use App\Services\BillingApiService;
 use Illuminate\Support\Facades\Log;
 
@@ -36,6 +37,7 @@ new #[Layout('layouts.guardian')] class extends Component {
     public function mount(?string $student = null): void
     {
         $this->studentUuid = $student;
+        $this->syncPendingDmoney();
     }
 
     public function resetFilters(): void
@@ -65,6 +67,31 @@ new #[Layout('layouts.guardian')] class extends Component {
         $this->showPayModal = false;
         $this->reset(['payInvoiceId', 'payTransactionRef', 'payPhone', 'payAmount']);
         $this->resetErrorBag();
+    }
+
+    // ── D-Money Polling ────────────────────────────────────────────────────────
+
+    public function syncPendingDmoney(): void
+    {
+        $guardian   = Guardian::where('user_id', auth()->id())->with('students')->first();
+        $studentIds = $guardian?->students->pluck('id') ?? collect();
+
+        $pending = DmoneyTransaction::whereIn('student_id', $studentIds)
+            ->pending()
+            ->get();
+
+        if ($pending->isEmpty()) {
+            return;
+        }
+
+        $syncer = app(SyncDmoneyPayment::class);
+        foreach ($pending as $tx) {
+            try {
+                $syncer->handle($tx->order_id);
+            } catch (\Throwable) {
+                // silent — will retry on next poll
+            }
+        }
     }
 
     // ── D-Money Online Payment ─────────────────────────────────────────────────
@@ -259,7 +286,7 @@ new #[Layout('layouts.guardian')] class extends Component {
 <div class="p-4 lg:p-6 space-y-6"
      wire:poll.30000ms
      x-data="{ pending: {{ $hasPendingDmoney ? 'true' : 'false' }}, fastPoll: null }"
-     x-init="if (pending) { fastPoll = setInterval(() => $wire.$refresh(), 5000) }"
+     x-init="if (pending) { fastPoll = setInterval(() => $wire.syncPendingDmoney(), 6000) }"
      x-effect="if (!pending && fastPoll) { clearInterval(fastPoll); fastPoll = null }">
 
     <x-header title="Mes Factures" subtitle="Suivi des paiements" separator>
