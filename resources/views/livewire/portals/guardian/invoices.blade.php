@@ -37,7 +37,6 @@ new #[Layout('layouts.guardian')] class extends Component {
     public function mount(?string $student = null): void
     {
         $this->studentUuid = $student;
-        $this->syncPendingDmoney();
     }
 
     public function resetFilters(): void
@@ -284,10 +283,7 @@ new #[Layout('layouts.guardian')] class extends Component {
 ?>
 
 <div class="p-4 lg:p-6 space-y-6"
-     wire:poll.30000ms
-     x-data="{ pending: {{ $hasPendingDmoney ? 'true' : 'false' }}, fastPoll: null }"
-     x-init="if (pending) { fastPoll = setInterval(() => $wire.syncPendingDmoney(), 6000) }"
-     x-effect="if (!pending && fastPoll) { clearInterval(fastPoll); fastPoll = null }">
+     @if($hasPendingDmoney) wire:poll.30000ms="syncPendingDmoney" @endif>
 
     <x-header title="Mes Factures" subtitle="Suivi des paiements" separator>
         <x-slot:actions>
