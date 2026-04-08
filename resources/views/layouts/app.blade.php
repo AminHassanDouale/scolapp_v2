@@ -121,6 +121,7 @@
                 @endcan
                 @can('payments.view')
                 <x-menu-item :title="__('navigation.payments')"      icon="o-credit-card"              :link="route('admin.finance.payments.index')" />
+                <x-menu-item title="Suivi des encaissements"          icon="o-chart-bar-square"         :link="route('admin.finance.payments.suivi')" />
                 @endcan
                 @can('fee-schedules.view')
                 <x-menu-item :title="__('navigation.fee_schedules')" icon="o-table-cells"              :link="route('admin.finance.fee-schedules.index')" />

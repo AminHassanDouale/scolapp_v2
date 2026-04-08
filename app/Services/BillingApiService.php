@@ -11,14 +11,21 @@ class BillingApiService
 
     public function __construct()
     {
+        $headers = [
+            'Accept'       => 'application/json',
+            'Content-Type' => 'application/json',
+        ];
+
+        $apiKey = config('billing.api_key');
+        if (filled($apiKey)) {
+            $headers['Authorization'] = 'Bearer ' . $apiKey;
+        }
+
         $this->http = new Client([
             'base_uri' => rtrim(config('billing.api_url'), '/'),
             'timeout'  => config('billing.timeout', 30),
-            'headers'  => [
-                'Accept'       => 'application/json',
-                'Content-Type' => 'application/json',
-            ],
-            'verify' => true,
+            'headers'  => $headers,
+            'verify'   => true,
         ]);
     }
 

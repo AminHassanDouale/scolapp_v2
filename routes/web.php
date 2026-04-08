@@ -228,6 +228,7 @@ Route::middleware(['auth', 'role:super-admin|admin|director|accountant', 'school
                 ->prefix('paiements')->name('payments.')
                 ->group(function () {
                     Volt::route('/',        'admin.finance.payments.index')->name('index');
+                    Volt::route('/suivi',   'admin.finance.payments.suivi')->name('suivi');
                     Volt::route('/nouveau', 'admin.finance.payments.create')->middleware('can:payments.create')->name('create');
                     Volt::route('/{uuid}',  'admin.finance.payments.show')->name('show');
                 });

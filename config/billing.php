@@ -6,10 +6,15 @@ return [
     |--------------------------------------------------------------------------
     | D-Money Payment Gateway — api.scolapp.com
     |--------------------------------------------------------------------------
-    | No authentication required — just HTTPS POST/GET.
     */
 
     'api_url'    => env('BILLING_API_URL', 'https://api.scolapp.com'),
+
+    /*
+    | API key sent as Bearer token in the Authorization header.
+    | Set BILLING_API_KEY in your .env on production.
+    */
+    'api_key'    => env('BILLING_API_KEY', ''),
 
     /*
     | URL where D-Money posts payment notifications (must be public HTTPS).

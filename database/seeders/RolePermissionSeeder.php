@@ -142,7 +142,7 @@ class RolePermissionSeeder extends Seeder
         // ── Billing / D-Money API ─────────────────────────────────────────────
         // billing.view  → see local D-Money transactions (admin panel)
         // billing.manage → full API management: plans, subs, refunds, webhooks
-        'billing.view'   => ['admin', 'director', 'accountant'],
+        'billing.view'   => ['admin', 'director', 'accountant', 'caissier'],
         'billing.manage' => ['admin'],
     ];
 
