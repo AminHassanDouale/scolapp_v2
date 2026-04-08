@@ -7,165 +7,214 @@ use Mary\Traits\Toast;
 new #[Layout('layouts.app')] class extends Component {
     use Toast;
 
-    public bool   $testing      = false;
-    public ?bool  $reachable    = null;
-    public ?bool  $authOk       = null;
-    public string $testMessage  = '';
+    public string $activeTab = 'connexion';
+
+    // ── Connection ─────────────────────────────────────────────────────────────
+    public bool   $testing   = false;
+    public ?bool  $reachable = null;
+    public array  $health    = [];
+    public string $testMsg   = '';
+
+    // ── Transactions ───────────────────────────────────────────────────────────
+    public string $lookupOrderId = '';
+    public array  $txDetail      = [];
+    public array  $txNotify      = [];
+    public bool   $loadingT      = false;
+
+    public function mount(): void {}
+
+    // ════════════════════════════════════════════════════════════════════════
+    // CONNECTION
+    // ════════════════════════════════════════════════════════════════════════
 
     public function testConnection(): void
     {
-        $this->testing     = true;
-        $this->reachable   = null;
-        $this->authOk      = null;
-        $this->testMessage = '';
-
+        $this->testing = true;
+        $this->health  = [];
+        $this->testMsg = '';
         try {
-            $svc = app(BillingApiService::class);
-
-            $this->reachable = $svc->isReachable();
-
-            if ($this->reachable) {
-                $svc->forgetToken();
-                $this->authOk = $svc->testAuth();
-                $this->testMessage = $this->authOk
-                    ? 'Connexion établie et authentification réussie.'
-                    : 'API accessible mais authentification échouée. Vérifiez les identifiants.';
-            } else {
-                $this->testMessage = 'API inaccessible. Vérifiez l\'URL et votre réseau.';
-            }
-
-            if ($this->authOk) {
-                $this->success($this->testMessage, position: 'toast-top toast-end', timeout: 4000);
-            } else {
-                $this->warning($this->testMessage, position: 'toast-top toast-end', timeout: 5000);
-            }
+            $this->health   = app(BillingApiService::class)->healthCheck();
+            $this->reachable = true;
+            $this->testMsg   = 'API accessible.';
+            $this->success($this->testMsg, position: 'toast-top toast-end', timeout: 3000);
         } catch (\Throwable $e) {
-            $this->testMessage = 'Erreur : ' . $e->getMessage();
-            $this->error($this->testMessage, position: 'toast-top toast-end', timeout: 6000);
+            $this->reachable = false;
+            $this->testMsg   = 'Erreur : ' . $e->getMessage();
+            $this->error($this->testMsg, position: 'toast-top toast-end', timeout: 6000);
         } finally {
             $this->testing = false;
         }
     }
 
-    public function clearTokenCache(): void
+    // ════════════════════════════════════════════════════════════════════════
+    // TRANSACTIONS
+    // ════════════════════════════════════════════════════════════════════════
+
+    public function lookupTransaction(): void
     {
-        app(BillingApiService::class)->forgetToken();
-        $this->success('Cache du token JWT effacé.', position: 'toast-top toast-end', timeout: 3000);
+        if (! $this->lookupOrderId) return;
+        $this->loadingT = true;
+        $this->txDetail = [];
+        $this->txNotify = [];
+        try {
+            $svc            = app(BillingApiService::class);
+            $this->txDetail = $svc->queryPayment($this->lookupOrderId);
+            $this->txNotify = $svc->getNotification($this->lookupOrderId);
+        } catch (\Throwable $e) {
+            $this->error('Erreur : ' . $e->getMessage(), position: 'toast-top toast-end');
+        } finally {
+            $this->loadingT = false;
+        }
     }
 
     public function with(): array
     {
-        $apiUrl    = config('billing.api_url', '—');
-        $apiEmail  = config('billing.api_email')  ? '✔ défini' : '✘ non défini';
-        $apiPass   = config('billing.api_password') ? '✔ défini' : '✘ non défini';
-        $whSecret  = config('billing.webhook_secret') ? '✔ défini' : '✘ non défini';
-        $planId    = config('billing.dmoney_plan_id', '—');
-        $successUrl = config('billing.success_url', '—');
-        $cancelUrl  = config('billing.cancel_url', '—');
-
-        return compact('apiUrl', 'apiEmail', 'apiPass', 'whSecret', 'planId', 'successUrl', 'cancelUrl');
+        return [
+            'cfgUrl'       => config('billing.api_url', '—'),
+            'cfgNotifyUrl' => config('billing.notify_url', '—'),
+        ];
     }
 };
 ?>
 
 <div>
-    <x-header title="Paramètres API Facturation (D-Money)" subtitle="Configuration de la passerelle de paiement en ligne" separator>
+    <x-header title="API Paiement D-Money" subtitle="Passerelle api.scolapp.com — aucune authentification requise" separator>
         <x-slot:actions>
-            <x-button label="Transactions" icon="o-banknotes"
+            <x-button label="Transactions locales" icon="o-banknotes"
                       link="{{ route('admin.billing.index') }}" class="btn-ghost btn-sm" />
         </x-slot:actions>
     </x-header>
 
+    {{-- Tabs --}}
+    <x-tabs wire:model="activeTab" class="mb-6">
+        <x-tab id="connexion"    label="Connexion"    icon="o-signal" />
+        <x-tab id="transactions" label="Transactions" icon="o-magnifying-glass" />
+    </x-tabs>
+
+    {{-- ═══════════════════════════════════════════════════════════ --}}
+    {{-- CONNEXION --}}
+    {{-- ═══════════════════════════════════════════════════════════ --}}
+    @if($activeTab === 'connexion')
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {{-- Config overview --}}
         <x-card title="Configuration .env" icon="o-cog-6-tooth">
-            <x-list-item title="URL de l'API" :value="$apiUrl" icon="o-globe-alt" no-separator />
-            <x-list-item title="Email API" :value="$apiEmail" icon="o-envelope" no-separator />
-            <x-list-item title="Mot de passe API" :value="$apiPass" icon="o-lock-closed" no-separator />
-            <x-list-item title="Secret Webhook" :value="$whSecret" icon="o-shield-check" no-separator />
-            <x-list-item title="Plan ID D-Money" :value="(string)$planId" icon="o-tag" no-separator />
-            <x-list-item title="URL succès" :value="$successUrl" icon="o-check-circle" no-separator />
-            <x-list-item title="URL annulation" :value="$cancelUrl" icon="o-x-circle" no-separator />
-
-            <x-slot:footer>
-                <div class="text-xs text-base-content/50 p-3">
-                    Ces valeurs sont lues depuis le fichier <code>.env</code>. Modifiez-les directement sur le serveur.
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between items-center py-2 border-b border-base-200">
+                    <span class="text-base-content/60">BILLING_API_URL</span>
+                    <code class="font-mono text-xs">{{ $cfgUrl }}</code>
                 </div>
-            </x-slot:footer>
+                <div class="flex justify-between items-center py-2 border-b border-base-200">
+                    <span class="text-base-content/60">BILLING_NOTIFY_URL</span>
+                    <code class="font-mono text-xs break-all">{{ $cfgNotifyUrl }}</code>
+                </div>
+                <div class="flex justify-between items-center py-2">
+                    <span class="text-base-content/60">Webhook D-Money → ScolApp</span>
+                    <code class="font-mono text-xs break-all">{{ url('/webhooks/billing') }}</code>
+                </div>
+            </div>
+            <div class="mt-3 p-3 rounded-xl bg-info/10 border border-info/20 text-xs text-info">
+                <strong>Aucune authentification requise.</strong> Simplement HTTPS POST/GET.
+            </div>
         </x-card>
 
-        {{-- Test connection --}}
-        <x-card title="Test de connexion" icon="o-signal">
-            <p class="text-sm text-base-content/70 mb-4">
-                Vérifiez que l'API de facturation est accessible et que les identifiants sont corrects.
-            </p>
-
-            {{-- Status indicators --}}
+        <x-card title="Test de connexion" icon="o-play">
             @if($reachable !== null)
-            <div class="space-y-3 mb-4">
-                <div class="flex items-center gap-2">
-                    @if($reachable)
-                        <x-icon name="o-check-circle" class="w-5 h-5 text-success" />
-                        <span class="text-sm text-success">API accessible</span>
-                    @else
-                        <x-icon name="o-x-circle" class="w-5 h-5 text-error" />
-                        <span class="text-sm text-error">API inaccessible</span>
-                    @endif
-                </div>
+            <div class="flex items-center gap-2 mb-4">
+                <x-icon :name="$reachable ? 'o-check-circle' : 'o-x-circle'"
+                        class="w-5 h-5 {{ $reachable ? 'text-success' : 'text-error' }}" />
+                <span class="text-sm {{ $reachable ? 'text-success' : 'text-error' }}">
+                    API {{ $reachable ? 'accessible' : 'inaccessible' }}
+                </span>
+            </div>
+            @if($testMsg)
+            <p class="text-xs text-base-content/60 mb-3 italic">{{ $testMsg }}</p>
+            @endif
+            @endif
 
-                @if($authOk !== null)
-                <div class="flex items-center gap-2">
-                    @if($authOk)
-                        <x-icon name="o-check-circle" class="w-5 h-5 text-success" />
-                        <span class="text-sm text-success">Authentification réussie</span>
-                    @else
-                        <x-icon name="o-x-circle" class="w-5 h-5 text-error" />
-                        <span class="text-sm text-error">Authentification échouée</span>
+            @if($health)
+            <div class="p-3 rounded-xl bg-base-200 text-xs mb-4">
+                <p class="font-semibold mb-1 text-base-content/70">Health Check</p>
+                @foreach($health as $k => $v)
+                    @if(is_string($v) || is_numeric($v))
+                    <p><span class="text-base-content/50">{{ $k }}</span>: <span class="font-medium">{{ $v }}</span></p>
                     @endif
-                </div>
-                @endif
-
-                @if($testMessage)
-                <x-alert :type="$authOk ? 'success' : 'warning'" :title="$testMessage" class="text-sm" />
-                @endif
+                @endforeach
             </div>
             @endif
 
-            <div class="flex gap-2 flex-wrap">
-                <x-button label="Tester la connexion" icon="o-play"
-                          wire:click="testConnection" :loading="$testing"
-                          class="btn-primary btn-sm" />
-
-                <x-button label="Effacer le cache token" icon="o-trash"
-                          wire:click="clearTokenCache"
-                          class="btn-ghost btn-sm text-warning" />
-            </div>
-
-            <x-slot:footer>
-                <div class="text-xs text-base-content/50 p-3">
-                    Le token JWT est mis en cache pendant 50 min pour éviter des appels inutiles à l'API.
-                </div>
-            </x-slot:footer>
+            <x-button label="Tester la connexion" icon="o-play"
+                      wire:click="testConnection" :loading="$testing"
+                      class="btn-primary btn-sm" />
         </x-card>
-
-        {{-- Webhook info --}}
-        <x-card title="Webhook D-Money" icon="o-arrow-path" class="lg:col-span-2">
-            <p class="text-sm text-base-content/70 mb-3">
-                Configurez cette URL dans votre tableau de bord D-Money / API facturation pour recevoir les confirmations de paiement automatiquement.
-            </p>
-            <div class="flex items-center gap-3 p-3 rounded-xl bg-base-200">
-                <x-icon name="o-link" class="w-5 h-5 text-primary shrink-0" />
-                <code class="text-sm font-mono flex-1 break-all">{{ url('/webhooks/billing') }}</code>
-                <x-button icon="o-clipboard-document" class="btn-ghost btn-xs"
-                          x-on:click="navigator.clipboard.writeText('{{ url('/webhooks/billing') }}'); $dispatch('toast', {message: 'Copié !'})"
-                          tooltip="Copier" />
-            </div>
-            <div class="mt-3 text-xs text-base-content/50">
-                Méthode : <strong>POST</strong> · Signature : <strong>HMAC-SHA256</strong> (header <code>X-Billing-Signature</code>) ·
-                La route est exclue de la vérification CSRF.
-            </div>
-        </x-card>
-
     </div>
+    @endif
+
+    {{-- ═══════════════════════════════════════════════════════════ --}}
+    {{-- TRANSACTIONS --}}
+    {{-- ═══════════════════════════════════════════════════════════ --}}
+    @if($activeTab === 'transactions')
+    <x-card title="Rechercher un paiement D-Money" icon="o-magnifying-glass">
+        <div class="flex gap-3 items-end">
+            <div class="flex-1">
+                <x-input label="Order ID (merch_order_id)" wire:model="lookupOrderId"
+                         placeholder="SCL000001XXXX" clearable />
+            </div>
+            <x-button label="Vérifier" icon="o-magnifying-glass"
+                      wire:click="lookupTransaction" :loading="$loadingT"
+                      class="btn-primary btn-sm mb-0.5" />
+        </div>
+
+        @if($txDetail)
+        <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            {{-- Query result --}}
+            <div class="p-4 bg-base-200 rounded-xl text-sm space-y-2">
+                <p class="font-semibold text-base-content/70 text-xs uppercase tracking-wider mb-2">Statut paiement</p>
+                @foreach($txDetail as $k => $v)
+                @if(is_string($v) || is_numeric($v))
+                <div class="flex justify-between gap-2">
+                    <span class="text-base-content/50">{{ $k }}</span>
+                    @if($k === 'trade_status')
+                    @php $color = match(strtoupper($v)) { 'SUCCESS' => 'badge-success', 'PENDING' => 'badge-warning', default => 'badge-error' }; @endphp
+                    <x-badge :value="$v" class="{{ $color }} badge-sm" />
+                    @else
+                    <span class="font-medium font-mono text-xs">{{ $v }}</span>
+                    @endif
+                </div>
+                @endif
+                @endforeach
+            </div>
+
+            {{-- Notifications --}}
+            @if($txNotify)
+            <div class="p-4 bg-base-200 rounded-xl text-sm">
+                <p class="font-semibold text-base-content/70 text-xs uppercase tracking-wider mb-2">
+                    Journal notifications
+                    @if(isset($txNotify['count']))
+                    <x-badge value="{{ $txNotify['count'] }}" class="badge-neutral badge-xs ml-1" />
+                    @endif
+                </p>
+                @if(isset($txNotify['latest_status']))
+                <p class="text-xs mb-2">
+                    Dernier statut :
+                    @php $c2 = match(strtoupper($txNotify['latest_status'] ?? '')) { 'SUCCESS' => 'badge-success', 'PENDING' => 'badge-warning', default => 'badge-error' }; @endphp
+                    <x-badge :value="$txNotify['latest_status']" class="{{ $c2 }} badge-sm" />
+                </p>
+                @endif
+                @if(!empty($txNotify['notifications']) && is_array($txNotify['notifications']))
+                <div class="space-y-1 max-h-48 overflow-y-auto">
+                    @foreach(array_slice(array_reverse($txNotify['notifications']), 0, 5) as $notif)
+                    <div class="text-xs p-2 rounded-lg bg-base-100 font-mono">
+                        {{ is_array($notif) ? json_encode($notif) : $notif }}
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+            @endif
+        </div>
+        @endif
+    </x-card>
+    @endif
+
 </div>

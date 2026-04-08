@@ -19,60 +19,44 @@ class WebhookController extends Controller
     /**
      * POST /webhooks/billing
      *
-     * Receives events forwarded from the billing API (D-Money callbacks).
-     * No auth — protected by HMAC signature instead.
+     * D-Money posts payment notifications here.
+     * Payload: { merch_order_id, trade_no, trade_status, total_amount, trans_currency, pay_time }
+     * Response must always be: { returnCode: "SUCCESS", returnMsg: "OK" }
      */
     public function handle(Request $request): JsonResponse
     {
-        // ── Signature verification ────────────────────────────────────────────
-        $signature = $request->header('X-Webhook-Signature', '');
-        $payload   = $request->getContent();
+        $data    = $request->all();
+        $orderId = $data['merch_order_id'] ?? null;
+        $status  = $data['trade_status']   ?? null;
 
-        if (
-            config('billing.webhook_secret') &&
-            ! BillingApiService::verifyWebhookSignature($payload, $signature)
-        ) {
-            Log::warning('D-Money webhook: invalid signature', [
-                'ip'        => $request->ip(),
-                'signature' => $signature,
-            ]);
-            return response()->json(['error' => 'Invalid signature'], 401);
+        Log::info('D-Money webhook received', ['order_id' => $orderId, 'trade_status' => $status]);
+
+        if (! $orderId || ! $status) {
+            Log::warning('D-Money webhook: missing required fields', $data);
+            return response()->json(['returnCode' => 'SUCCESS', 'returnMsg' => 'OK']);
         }
 
-        $data      = $request->all();
-        $eventType = $data['event_type'] ?? null;
-        $orderId   = $data['order_id']   ?? null;
-
-        Log::info('D-Money webhook received', ['event' => $eventType, 'order_id' => $orderId]);
-
         try {
-            match ($eventType) {
-                'payment.completed'      => $this->onPaymentCompleted($data),
-                'payment.failed'         => $this->onPaymentFailed($data),
-                'subscription.activated' => $this->onPaymentCompleted($data),  // alias
-                'subscription.expired',
-                'subscription.canceled'  => $this->onPaymentFailed($data),
-                default => Log::info('D-Money webhook: unhandled event', ['type' => $eventType]),
+            match (strtoupper($status)) {
+                'SUCCESS'          => $this->onPaymentSuccess($orderId, $data),
+                'FAILED', 'EXPIRED'=> $this->onPaymentFailed($orderId, $status, $data),
+                default            => Log::info('D-Money webhook: unhandled trade_status', ['status' => $status]),
             };
         } catch (\Throwable $e) {
             Log::error('D-Money webhook processing error', [
                 'error'    => $e->getMessage(),
-                'event'    => $eventType,
                 'order_id' => $orderId,
             ]);
-            return response()->json(['error' => 'Processing error'], 500);
         }
 
-        return response()->json(['status' => 'ok']);
+        // Always acknowledge to D-Money
+        return response()->json(['returnCode' => 'SUCCESS', 'returnMsg' => 'OK']);
     }
 
     // ── Handlers ───────────────────────────────────────────────────────────────
 
-    private function onPaymentCompleted(array $data): void
+    private function onPaymentSuccess(string $orderId, array $data): void
     {
-        $orderId = $data['order_id'] ?? null;
-        if (! $orderId) return;
-
         $tx = DmoneyTransaction::where('order_id', $orderId)->first();
         if (! $tx) {
             Log::warning('D-Money webhook: unknown order_id', ['order_id' => $orderId]);
@@ -81,6 +65,25 @@ class WebhookController extends Controller
 
         if ($tx->isCompleted()) {
             return; // idempotent — already processed
+        }
+
+        // Verify with the API before marking paid
+        try {
+            /** @var BillingApiService $billing */
+            $billing = app(BillingApiService::class);
+            $verified = $billing->queryPayment($orderId);
+            if (strtoupper($verified['trade_status'] ?? '') !== 'SUCCESS') {
+                Log::warning('D-Money webhook: verification failed', [
+                    'order_id'     => $orderId,
+                    'api_response' => $verified,
+                ]);
+                return;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('D-Money webhook: could not verify payment, proceeding with webhook data', [
+                'order_id' => $orderId,
+                'error'    => $e->getMessage(),
+            ]);
         }
 
         DB::transaction(function () use ($tx, $data) {
@@ -99,12 +102,13 @@ class WebhookController extends Controller
                 'payment_method'  => 'mobile_money',
                 'amount'          => $tx->amount,
                 'payment_date'    => now()->toDateString(),
-                'transaction_ref' => $tx->order_id,
+                'transaction_ref' => $data['trade_no'] ?? $tx->order_id,
                 'notes'           => 'Paiement D-Money en ligne (automatique)',
                 'meta'            => [
-                    'channel'   => 'dmoney_online',
-                    'order_id'  => $tx->order_id,
-                    'dmoney_tx' => $tx->id,
+                    'channel'    => 'dmoney_online',
+                    'order_id'   => $tx->order_id,
+                    'trade_no'   => $data['trade_no'] ?? null,
+                    'dmoney_tx'  => $tx->id,
                 ],
             ]);
 
@@ -125,7 +129,7 @@ class WebhookController extends Controller
                 $invoice->update(['status' => InvoiceStatus::PARTIALLY_PAID->value]);
             }
 
-            // Update transaction
+            // Mark transaction completed
             $tx->update([
                 'status'          => 'completed',
                 'payment_id'      => $payment->id,
@@ -141,19 +145,16 @@ class WebhookController extends Controller
         });
     }
 
-    private function onPaymentFailed(array $data): void
+    private function onPaymentFailed(string $orderId, string $status, array $data): void
     {
-        $orderId = $data['order_id'] ?? null;
-        if (! $orderId) return;
-
         DmoneyTransaction::where('order_id', $orderId)
             ->where('status', 'pending')
             ->update([
-                'status'          => $data['event_type'] === 'subscription.canceled' ? 'cancelled' : 'failed',
+                'status'          => strtoupper($status) === 'EXPIRED' ? 'failed' : 'failed',
                 'webhook_payload' => $data,
                 'cancelled_at'    => now(),
             ]);
 
-        Log::info('D-Money payment failed/cancelled', ['order_id' => $orderId]);
+        Log::info('D-Money payment failed/expired', ['order_id' => $orderId, 'trade_status' => $status]);
     }
 }

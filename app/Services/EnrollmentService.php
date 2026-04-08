@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Actions\ConfirmEnrollmentAction;
 use App\Actions\CreateEnrollmentAction;
 use App\Enums\EnrollmentStatus;
+use App\Enums\InvoiceType;
+use App\Mail\InvoiceGeneratedMail;
 use App\Models\AcademicYear;
 use App\Models\Enrollment;
 use App\Models\FeeSchedule;
@@ -12,6 +14,8 @@ use App\Models\Grade;
 use App\Models\SchoolClass;
 use App\Models\Student;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class EnrollmentService
 {
@@ -50,14 +54,67 @@ class EnrollmentService
 
     public function confirm(Enrollment $enrollment): Enrollment
     {
-        return DB::transaction(function () use ($enrollment) {
-            $enrollment = ($this->confirmAction)($enrollment);
+        $tuitionInvoices = [];
 
-            // Generate tuition installments
-            $this->invoiceService->generateTuitionInstallments($enrollment);
-
+        $enrollment = DB::transaction(function () use ($enrollment, &$tuitionInvoices) {
+            $enrollment      = ($this->confirmAction)($enrollment);
+            $tuitionInvoices = $this->invoiceService->generateTuitionInstallments($enrollment);
             return $enrollment;
         });
+
+        // Send all invoices by email after the transaction commits
+        $this->sendInvoiceEmails($enrollment, $tuitionInvoices);
+
+        return $enrollment;
+    }
+
+    private function sendInvoiceEmails(Enrollment $enrollment, array $tuitionInvoices): void
+    {
+        // Get guardians who should receive notifications, with fallback to primary guardian
+        $guardians = $enrollment->student->guardians()
+            ->with('user')
+            ->wherePivot('receive_notifications', true)
+            ->get();
+
+        if ($guardians->isEmpty()) {
+            $guardians = $enrollment->student->guardians()
+                ->with('user')
+                ->wherePivot('is_primary', true)
+                ->get();
+        }
+
+        $guardians = $guardians->filter(
+            fn($g) => filled($g->email) || filled($g->user?->email)
+        );
+
+        if ($guardians->isEmpty()) {
+            return;
+        }
+
+        // Collect all invoices: registration invoice + tuition installments
+        $registrationInvoice = $enrollment->invoices()
+            ->where('invoice_type', InvoiceType::REGISTRATION->value)
+            ->latest()
+            ->first();
+
+        $invoices = collect($tuitionInvoices);
+        if ($registrationInvoice) {
+            $invoices->prepend($registrationInvoice);
+        }
+
+        foreach ($guardians as $guardian) {
+            foreach ($invoices as $invoice) {
+                try {
+                    Mail::queue(new InvoiceGeneratedMail($invoice, $guardian));
+                } catch (\Throwable $e) {
+                    Log::warning('Failed to queue invoice email', [
+                        'invoice_id'  => $invoice->id,
+                        'guardian_id' => $guardian->id,
+                        'error'       => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
     }
 
     public function cancel(Enrollment $enrollment, string $reason): Enrollment

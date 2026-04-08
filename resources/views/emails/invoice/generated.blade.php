@@ -12,7 +12,7 @@
 
 # {{ $isRegistration ? 'Frais d\'inscription — Paiement immédiat' : 'Échéancier de paiement — ' . $invoice->school->name }}
 
-Bonjour,
+Bonjour {{ $guardian->name ?? 'Parent/Tuteur' }},
 
 @if($isRegistration)
 Un frais d'inscription a été généré pour **{{ $invoice->student->full_name }}** suite à son inscription à **{{ $invoice->school->name }}**.

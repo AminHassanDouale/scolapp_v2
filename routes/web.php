@@ -274,11 +274,11 @@ Route::middleware(['auth', 'role:super-admin|admin|director|accountant', 'school
             Volt::route('/utilisateurs', 'admin.settings.users')->middleware('can:settings.users.view')->name('users');
             Volt::route('/roles',        'admin.settings.roles')->middleware('can:settings.roles.view')->name('roles');
             Volt::route('/appareils',    'admin.settings.device-tokens')->middleware('can:settings.users.view')->name('device-tokens');
-            Volt::route('/facturation',  'admin.settings.billing-api')->middleware('can:settings.school.view')->name('billing-api');
+            Volt::route('/facturation',  'admin.settings.billing-api')->middleware('can:billing.manage')->name('billing-api');
         });
 
         // ── Billing / D-Money transactions ────────────────────────────────────
-        Route::middleware('can:payments.view')
+        Route::middleware('can:billing.view')
             ->prefix('facturation')->name('billing.')
             ->group(function () {
                 Volt::route('/', 'admin.billing.index')->name('index');

@@ -98,15 +98,17 @@ new #[Layout('layouts.guardian')] class extends Component {
         }
 
         try {
-            $successUrl = route('dmoney.success');
-            $cancelUrl  = route('dmoney.cancel');
+            $orderId    = 'SCL' . str_pad((string) $invoice->id, 6, '0', STR_PAD_LEFT) . strtoupper(substr(uniqid(), -4));
+            $title      = 'Facture ' . $invoice->reference;
+            $redirectUrl = route('guardian.dmoney.success');
 
             /** @var BillingApiService $billing */
             $billing = app(BillingApiService::class);
             $result  = $billing->createInvoicePayment(
                 (int) $invoice->balance_due,
-                $successUrl,
-                $cancelUrl
+                $title,
+                $orderId,
+                $redirectUrl
             );
 
             DmoneyTransaction::create([
@@ -114,7 +116,7 @@ new #[Layout('layouts.guardian')] class extends Component {
                 'invoice_id'             => $invoice->id,
                 'student_id'             => $invoice->student_id,
                 'user_id'                => auth()->id(),
-                'billing_subscription_id'=> (string) ($result['subscription_id'] ?? ''),
+                'billing_subscription_id'=> (string) ($result['prepay_id'] ?? ''),
                 'order_id'               => $result['order_id'],
                 'checkout_url'           => $result['checkout_url'],
                 'amount'                 => (int) $invoice->balance_due,

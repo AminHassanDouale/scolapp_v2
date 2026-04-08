@@ -4,36 +4,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | SaaS Billing API — D-Money Integration
-    | Base URL: https://api.scolapp.com
+    | D-Money Payment Gateway — api.scolapp.com
     |--------------------------------------------------------------------------
+    | No authentication required — just HTTPS POST/GET.
     */
 
-    'api_url'        => env('BILLING_API_URL', 'https://api.scolapp.com'),
-    'api_email'      => env('BILLING_API_EMAIL'),
-    'api_password'   => env('BILLING_API_PASSWORD'),
-    'webhook_secret' => env('BILLING_WEBHOOK_SECRET'),
+    'api_url'    => env('BILLING_API_URL', 'https://api.scolapp.com'),
 
     /*
-    | The billing system plan_id that represents a "school invoice payment".
-    | Create this plan once in the billing dashboard, copy its ID here.
+    | URL where D-Money posts payment notifications (must be public HTTPS).
+    | Set in .env for production: BILLING_NOTIFY_URL=https://scolapp.com/webhooks/billing
     */
-    'dmoney_plan_id' => env('BILLING_DMONEY_PLAN_ID', 1),
-
-    /*
-    | D-Money redirect URLs after checkout
-    */
-    'success_url' => env('BILLING_SUCCESS_URL'),   // falls back to route() in controller
-    'cancel_url'  => env('BILLING_CANCEL_URL'),
+    'notify_url' => env('BILLING_NOTIFY_URL', 'https://scolapp.com/webhooks/billing'),
 
     'timeout' => 30,
 
     'endpoints' => [
-        'login'    => '/api/v1/auth/login',
-        'plans'    => '/api/v1/plans',
-        'subs'     => '/api/v1/subscriptions',
-        'pay'      => '/api/v1/payments/create',
-        'verify'   => '/api/v1/payments/verify',
-        'health'   => '/health',
+        'health'          => '/health',
+        'payment_create'  => '/payment/create',
+        'payment_query'   => '/payment/query',
+        'payment_notify'  => '/payment/notify',
     ],
 ];

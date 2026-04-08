@@ -138,6 +138,12 @@ class RolePermissionSeeder extends Seeder
         'settings.users.manage' => ['admin'],
         'settings.roles.view'   => ['admin'],
         'settings.roles.manage' => [], // super-admin only (via Gate::before)
+
+        // ── Billing / D-Money API ─────────────────────────────────────────────
+        // billing.view  → see local D-Money transactions (admin panel)
+        // billing.manage → full API management: plans, subs, refunds, webhooks
+        'billing.view'   => ['admin', 'director', 'accountant'],
+        'billing.manage' => ['admin'],
     ];
 
     public function run(): void

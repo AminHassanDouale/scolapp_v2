@@ -92,64 +92,57 @@ new #[Layout('layouts.app')] class extends Component {
             <x-icon name="o-inbox" class="w-12 h-12 mx-auto text-base-content/30 mt-8 mb-4" />
             <p class="text-center text-base-content/50 pb-8">Aucune transaction D-Money trouvée.</p>
         @else
-        <x-table>
-            <x-slot:headers>
-                <x-table.header label="Date" sortable wire:click="$set('sortBy','created_at')" />
-                <x-table.header label="Order ID" />
-                <x-table.header label="Élève" />
-                <x-table.header label="Parent" />
-                <x-table.header label="Facture" />
-                <x-table.header label="Montant" sortable wire:click="$set('sortBy','amount')" />
-                <x-table.header label="Statut" />
-                <x-table.header label="Actions" />
-            </x-slot:headers>
-
+        <div class="overflow-x-auto">
+        <table class="table table-sm w-full">
+            <thead><tr>
+                <th wire:click="$set('sortBy','created_at')" class="cursor-pointer">Date</th>
+                <th>Order ID</th>
+                <th>Élève</th>
+                <th>Parent</th>
+                <th>Facture</th>
+                <th wire:click="$set('sortBy','amount')" class="cursor-pointer text-right">Montant</th>
+                <th>Statut</th>
+                <th>Actions</th>
+            </tr></thead>
+            <tbody>
             @foreach($transactions as $tx)
-            <x-table.row>
-                <x-table.cell>
+            <tr>
+                <td>
                     <span class="text-sm">{{ $tx->created_at->format('d/m/Y H:i') }}</span>
                     @if($tx->completed_at)
                         <br><span class="text-xs text-success">Confirmé {{ $tx->completed_at->format('H:i') }}</span>
                     @endif
-                </x-table.cell>
-
-                <x-table.cell>
+                </td>
+                <td>
                     @if($tx->order_id)
                         <code class="text-xs bg-base-200 px-1 rounded">{{ $tx->order_id }}</code>
                     @else
                         <span class="text-base-content/40 text-xs">—</span>
                     @endif
-                </x-table.cell>
-
-                <x-table.cell>
-                    {{ $tx->student?->name ?? '—' }}
-                </x-table.cell>
-
-                <x-table.cell>
+                </td>
+                <td>{{ $tx->student?->name ?? '—' }}</td>
+                <td>
                     <div class="text-sm">{{ $tx->user?->name ?? '—' }}</div>
                     @if($tx->guardian_phone)
                         <div class="text-xs text-base-content/50">{{ $tx->guardian_phone }}</div>
                     @endif
-                </x-table.cell>
-
-                <x-table.cell>
+                </td>
+                <td>
                     @if($tx->invoice)
                         <a href="{{ route('admin.finance.invoices.show', $tx->invoice->uuid) }}"
                            class="link link-primary text-sm">{{ $tx->invoice->number ?? '#'.$tx->invoice_id }}</a>
                     @else
                         <span class="text-base-content/40 text-xs">—</span>
                     @endif
-                </x-table.cell>
-
-                <x-table.cell>
+                </td>
+                <td class="text-right">
                     <span class="font-semibold">{{ number_format($tx->amount, 0, ',', ' ') }} DJF</span>
-                </x-table.cell>
-
-                <x-table.cell>
+                </td>
+                <td>
                     <x-badge :value="$tx->statusLabel()" :color="$tx->statusColor()" />
-                </x-table.cell>
-
-                <x-table.cell>
+                </td>
+                <td>
+                    <div class="flex gap-1">
                     @if($tx->isPending())
                         <x-button icon="o-x-mark" wire:click="markCancelled({{ $tx->id }})"
                                   class="btn-ghost btn-xs text-error"
@@ -160,10 +153,13 @@ new #[Layout('layouts.app')] class extends Component {
                                   link="{{ $tx->checkout_url }}" target="_blank"
                                   class="btn-ghost btn-xs" tooltip="Ouvrir checkout" />
                     @endif
-                </x-table.cell>
-            </x-table.row>
+                    </div>
+                </td>
+            </tr>
             @endforeach
-        </x-table>
+            </tbody>
+        </table>
+        </div>
 
         <div class="mt-4">
             {{ $transactions->links() }}

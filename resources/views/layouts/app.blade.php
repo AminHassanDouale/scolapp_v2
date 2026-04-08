@@ -81,46 +81,98 @@
             <x-menu-item :title="__('navigation.dashboard')" icon="o-squares-2x2" link="{{ route('admin.dashboard') }}" />
 
             {{-- Academic --}}
+            @canany(['students.view','guardians.view','teachers.view','academic.view','enrollments.view','attendance.view','timetable.view','assessments.view','report-cards.view'])
             <x-menu-sub :title="__('navigation.academic')" icon="o-academic-cap">
-                <x-menu-item :title="__('navigation.students')"    icon="o-user-group"               :link="route('admin.students.index')" />
-                <x-menu-item title="Responsables"                  icon="o-users"                    :link="route('admin.guardians.index')" />
-                <x-menu-item :title="__('navigation.teachers')"    icon="o-briefcase"               :link="route('admin.teachers.index')" />
-                <x-menu-item :title="__('navigation.classes')"     icon="o-building-office"         :link="route('admin.academic.classes')" />
-                <x-menu-item :title="__('navigation.enrollments')" icon="o-clipboard-document-check" :link="route('admin.enrollments.index')" />
-                <x-menu-item :title="__('navigation.attendance')"  icon="o-calendar-days"           :link="route('admin.attendance.index')" />
-                <x-menu-item title="Emplois du temps"              icon="o-table-cells"              :link="route('admin.timetable.index')" />
-                <x-menu-item :title="__('navigation.assessments')" icon="o-pencil-square"           :link="route('admin.assessments.index')" />
-                <x-menu-item :title="__('navigation.report_cards')" icon="o-document-text"          :link="route('admin.report-cards.index')" />
+                @can('students.view')
+                <x-menu-item :title="__('navigation.students')"     icon="o-user-group"                :link="route('admin.students.index')" />
+                @endcan
+                @can('guardians.view')
+                <x-menu-item title="Responsables"                   icon="o-users"                     :link="route('admin.guardians.index')" />
+                @endcan
+                @can('teachers.view')
+                <x-menu-item :title="__('navigation.teachers')"     icon="o-briefcase"                :link="route('admin.teachers.index')" />
+                @endcan
+                @can('academic.view')
+                <x-menu-item :title="__('navigation.classes')"      icon="o-building-office"           :link="route('admin.academic.classes')" />
+                @endcan
+                @can('enrollments.view')
+                <x-menu-item :title="__('navigation.enrollments')"  icon="o-clipboard-document-check"  :link="route('admin.enrollments.index')" />
+                @endcan
+                @can('attendance.view')
+                <x-menu-item :title="__('navigation.attendance')"   icon="o-calendar-days"             :link="route('admin.attendance.index')" />
+                @endcan
+                @can('timetable.view')
+                <x-menu-item title="Emplois du temps"               icon="o-table-cells"               :link="route('admin.timetable.index')" />
+                @endcan
+                @can('assessments.view')
+                <x-menu-item :title="__('navigation.assessments')"  icon="o-pencil-square"             :link="route('admin.assessments.index')" />
+                @endcan
+                @can('report-cards.view')
+                <x-menu-item :title="__('navigation.report_cards')" icon="o-document-text"             :link="route('admin.report-cards.index')" />
+                @endcan
             </x-menu-sub>
+            @endcanany
 
             {{-- Finance --}}
+            @canany(['invoices.view','payments.view','fee-schedules.view','billing.view'])
             <x-menu-sub :title="__('navigation.finance')" icon="o-banknotes">
+                @can('invoices.view')
                 <x-menu-item :title="__('navigation.invoices')"      icon="o-document-currency-dollar" :link="route('admin.finance.invoices.index')" />
+                @endcan
+                @can('payments.view')
                 <x-menu-item :title="__('navigation.payments')"      icon="o-credit-card"              :link="route('admin.finance.payments.index')" />
-                <x-menu-item :title="__('navigation.fee_schedules')" icon="o-table-cells"             :link="route('admin.finance.fee-schedules.index')" />
+                @endcan
+                @can('fee-schedules.view')
+                <x-menu-item :title="__('navigation.fee_schedules')" icon="o-table-cells"              :link="route('admin.finance.fee-schedules.index')" />
+                @endcan
+                @can('billing.view')
+                <x-menu-item title="Transactions D-Money"            icon="o-device-phone-mobile"       :link="route('admin.billing.index')" />
+                @endcan
             </x-menu-sub>
+            @endcanany
 
             {{-- Communication --}}
+            @canany(['announcements.view','messages.view'])
             <x-menu-sub :title="__('navigation.communication')" icon="o-chat-bubble-left-right">
+                @can('announcements.view')
                 <x-menu-item :title="__('navigation.announcements')" icon="o-megaphone" :link="route('admin.announcements.index')" />
+                @endcan
+                @can('messages.view')
                 <x-menu-item :title="__('navigation.messages')"      icon="o-envelope"  :link="route('admin.messages.index')" />
+                @endcan
             </x-menu-sub>
+            @endcanany
 
             {{-- Reports --}}
+            @can('reports.view')
             <x-menu-item :title="__('navigation.reports')" icon="o-chart-bar" link="{{ route('admin.reports.index') }}" />
+            @endcan
 
             {{-- Scheduled Tasks --}}
+            @can('scheduled-tasks.view')
             <x-menu-item title="Tâches planifiées" icon="o-clock" link="{{ route('admin.scheduled-tasks.index') }}" />
+            @endcan
 
             <x-menu-separator />
 
             {{-- Settings --}}
+            @canany(['settings.school.view','settings.users.view','settings.roles.view','billing.manage'])
             <x-menu-sub :title="__('navigation.settings')" icon="o-cog-6-tooth">
-                <x-menu-item :title="__('navigation.school')" icon="o-building-library"   :link="route('admin.settings.school')" />
-                <x-menu-item :title="__('navigation.users')"  icon="o-users"              :link="route('admin.settings.users')" />
-                <x-menu-item :title="__('navigation.roles')"  icon="o-shield-check"       :link="route('admin.settings.roles')" />
-                <x-menu-item title="Appareils"                icon="o-device-phone-mobile" :link="route('admin.settings.device-tokens')" />
+                @can('settings.school.view')
+                <x-menu-item :title="__('navigation.school')" icon="o-building-library"    :link="route('admin.settings.school')" />
+                @endcan
+                @can('settings.users.view')
+                <x-menu-item :title="__('navigation.users')"  icon="o-users"               :link="route('admin.settings.users')" />
+                <x-menu-item title="Appareils"                 icon="o-device-phone-mobile" :link="route('admin.settings.device-tokens')" />
+                @endcan
+                @can('settings.roles.view')
+                <x-menu-item :title="__('navigation.roles')"  icon="o-shield-check"        :link="route('admin.settings.roles')" />
+                @endcan
+                @can('billing.manage')
+                <x-menu-item title="API Facturation D-Money"   icon="o-credit-card"         :link="route('admin.settings.billing-api')" />
+                @endcan
             </x-menu-sub>
+            @endcanany
 
             <x-menu-separator />
 
