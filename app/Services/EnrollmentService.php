@@ -70,24 +70,31 @@ class EnrollmentService
 
     private function sendInvoiceEmails(Enrollment $enrollment, array $tuitionInvoices): void
     {
-        // Get guardians who should receive notifications, with fallback to primary guardian
-        $guardians = $enrollment->student->guardians()
-            ->with('user')
-            ->wherePivot('receive_notifications', true)
-            ->get();
+        // Explicitly reload student with all guardians and their users
+        $student = $enrollment->student()->with('guardians.user')->firstOrFail();
 
-        if ($guardians->isEmpty()) {
-            $guardians = $enrollment->student->guardians()
-                ->with('user')
-                ->wherePivot('is_primary', true)
-                ->get();
-        }
+        Log::info('sendInvoiceEmails: student loaded', [
+            'student_id'     => $student->id,
+            'student_name'   => $student->full_name,
+            'guardian_count' => $student->guardians->count(),
+            'tuition_count'  => count($tuitionInvoices),
+        ]);
 
-        $guardians = $guardians->filter(
+        // Get all guardians who have any email — no pivot filter
+        $guardians = $student->guardians->filter(
             fn($g) => filled($g->email) || filled($g->user?->email)
         );
 
+        Log::info('sendInvoiceEmails: guardians with email', [
+            'count' => $guardians->count(),
+            'emails' => $guardians->map(fn($g) => $g->email ?? $g->user?->email)->all(),
+        ]);
+
         if ($guardians->isEmpty()) {
+            Log::warning('sendInvoiceEmails: no guardian with email found', [
+                'enrollment_id' => $enrollment->id,
+                'student_id'    => $student->id,
+            ]);
             return;
         }
 
@@ -97,17 +104,26 @@ class EnrollmentService
             ->latest()
             ->first();
 
-        $invoices = collect($tuitionInvoices);
+        $invoices = collect($tuitionInvoices)->values();
         if ($registrationInvoice) {
             $invoices->prepend($registrationInvoice);
         }
+
+        Log::info('sendInvoiceEmails: queuing emails', [
+            'invoice_count'  => $invoices->count(),
+            'guardian_count' => $guardians->count(),
+        ]);
 
         foreach ($guardians as $guardian) {
             foreach ($invoices as $invoice) {
                 try {
                     Mail::queue(new InvoiceGeneratedMail($invoice, $guardian));
+                    Log::info('sendInvoiceEmails: queued', [
+                        'invoice_ref' => $invoice->reference,
+                        'email'       => $guardian->email ?? $guardian->user?->email,
+                    ]);
                 } catch (\Throwable $e) {
-                    Log::warning('Failed to queue invoice email', [
+                    Log::error('sendInvoiceEmails: failed to queue', [
                         'invoice_id'  => $invoice->id,
                         'guardian_id' => $guardian->id,
                         'error'       => $e->getMessage(),

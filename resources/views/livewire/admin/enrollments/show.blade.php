@@ -3,7 +3,7 @@ use App\Models\Enrollment;
 use App\Enums\EnrollmentStatus;
 use App\Enums\InvoiceStatus;
 use App\Enums\InvoiceType;
-use App\Actions\ConfirmEnrollmentAction;
+use App\Services\EnrollmentService;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
@@ -40,7 +40,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function confirmEnrollment(): void
     {
         try {
-            app(ConfirmEnrollmentAction::class)($this->enrollment);
+            app(EnrollmentService::class)->confirm($this->enrollment);
         } catch (\RuntimeException $e) {
             $this->error($e->getMessage(), position: 'toast-top toast-center', icon: 'o-x-circle', css: 'alert-error', timeout: 4000);
             return;

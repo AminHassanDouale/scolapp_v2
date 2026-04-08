@@ -14,7 +14,6 @@ use App\Enums\InvoiceType;
 use App\Enums\InvoiceStatus;
 use App\Actions\CreateEnrollmentAction;
 use App\Actions\ConfirmEnrollmentAction;
-use App\Mail\InvoiceGeneratedMail;
 use App\Mail\GuardianWelcomeMail;
 use Carbon\Carbon;
 use Livewire\Volt\Component;
@@ -173,24 +172,8 @@ new #[Layout('layouts.app')] class extends Component {
                 }
             }
 
-            // Send invoice notifications synchronously (registration always, first tuition only)
-            if (! empty($generatedInvoices) && $primaryGuardian?->email) {
-                $sentTypes = [];
-                foreach ($generatedInvoices as $invoice) {
-                    $type = $invoice->invoice_type instanceof \App\Enums\InvoiceType
-                        ? $invoice->invoice_type->value
-                        : (string) $invoice->invoice_type;
-                    // Always send registration invoice; send only the first tuition installment
-                    if ($type === 'registration' || (! in_array('tuition', $sentTypes) && $type === 'tuition')) {
-                        try {
-                            Mail::to($primaryGuardian->email)->send(new InvoiceGeneratedMail($invoice));
-                        } catch (\Throwable $mailEx) {
-                            \Illuminate\Support\Facades\Log::error('InvoiceGeneratedMail failed: ' . $mailEx->getMessage());
-                        }
-                        $sentTypes[] = $type;
-                    }
-                }
-            }
+            // Invoice emails are sent via EnrollmentService::confirm() after confirmation
+            // Nothing to send here at enrollment creation time
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Enrollment post-save error: ' . $e->getMessage(), [
                 'enrollment_id' => $enrollment->id,

@@ -26,6 +26,7 @@ new #[Layout('layouts.guardian')] class extends Component {
     public string  $payMethod       = 'waafi';
     public float   $payAmount       = 0;
 
+
     #[Rule('required|string|min:4|max:100')]
     public string $payTransactionRef = '';
 
@@ -68,18 +69,18 @@ new #[Layout('layouts.guardian')] class extends Component {
 
     // ── D-Money Online Payment ─────────────────────────────────────────────────
 
-    public function initiateDMoney(int $invoiceId): mixed
+    public function initiateDMoney(int $invoiceId): void
     {
         $invoice = Invoice::find($invoiceId);
 
         if (! $invoice || in_array($invoice->status, [InvoiceStatus::PAID, InvoiceStatus::CANCELLED])) {
             $this->error('Facture non disponible.', position: 'toast-top toast-center');
-            return null;
+            return;
         }
 
         if ($invoice->balance_due <= 0) {
             $this->error('Aucun montant dû sur cette facture.', position: 'toast-top toast-center');
-            return null;
+            return;
         }
 
         // Block if a pending D-Money transaction already exists for this invoice
@@ -94,7 +95,7 @@ new #[Layout('layouts.guardian')] class extends Component {
                 position: 'toast-top toast-center',
                 timeout: 5000
             );
-            return null;
+            return;
         }
 
         try {
@@ -124,7 +125,7 @@ new #[Layout('layouts.guardian')] class extends Component {
                 'status'                 => 'pending',
             ]);
 
-            return redirect()->away($result['checkout_url']);
+            $this->dispatch('open-checkout', url: $result['checkout_url']);
 
         } catch (\Throwable $e) {
             Log::error('D-Money payment initiation failed', [
@@ -137,7 +138,6 @@ new #[Layout('layouts.guardian')] class extends Component {
                 position: 'toast-top toast-center',
                 timeout: 6000
             );
-            return null;
         }
     }
 
@@ -247,13 +247,21 @@ new #[Layout('layouts.guardian')] class extends Component {
 
         $filtersActive = $this->academicYearId || $this->statusFilter || $this->studentUuid;
 
-        return compact('students', 'invoices', 'totalUnpaid', 'school', 'academicYears', 'statusOptions', 'academicYearOptions', 'filtersActive');
+        $hasPendingDmoney = \App\Models\DmoneyTransaction::whereIn('invoice_id', $invoices->pluck('id'))
+            ->where('status', 'pending')
+            ->exists();
+
+        return compact('students', 'invoices', 'totalUnpaid', 'school', 'academicYears', 'statusOptions', 'academicYearOptions', 'filtersActive', 'hasPendingDmoney');
     }
 };
 ?>
 
-{{-- Auto-refresh every 30 seconds --}}
-<div wire:poll.30000ms class="p-4 lg:p-6 space-y-6">
+<div class="p-4 lg:p-6 space-y-6"
+     wire:poll.30000ms
+     x-data="{ pending: {{ $hasPendingDmoney ? 'true' : 'false' }}, fastPoll: null }"
+     x-init="if (pending) { fastPoll = setInterval(() => $wire.$refresh(), 5000) }"
+     x-effect="if (!pending && fastPoll) { clearInterval(fastPoll); fastPoll = null }"
+     @open-checkout.window="window.open($event.detail.url, '_blank', 'noopener,noreferrer')">
 
     <x-header title="Mes Factures" subtitle="Suivi des paiements" separator>
         <x-slot:actions>

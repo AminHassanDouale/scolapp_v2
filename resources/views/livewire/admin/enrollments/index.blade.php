@@ -3,7 +3,7 @@ use App\Models\Enrollment;
 use App\Models\AcademicYear;
 use App\Models\SchoolClass;
 use App\Enums\EnrollmentStatus;
-use App\Actions\ConfirmEnrollmentAction;
+use App\Services\EnrollmentService;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use Livewire\WithPagination;
@@ -25,7 +25,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function confirmEnrollment(int $id): void
     {
         $enrollment = Enrollment::findOrFail($id);
-        app(ConfirmEnrollmentAction::class)($enrollment);
+        app(EnrollmentService::class)->confirm($enrollment);
         $this->success('Inscription confirmée.', position: 'toast-top toast-end', icon: 'o-banknotes', css: 'alert-success', timeout: 3000);
     }
 
