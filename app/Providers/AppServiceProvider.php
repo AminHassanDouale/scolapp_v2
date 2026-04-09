@@ -2,15 +2,18 @@
 
 namespace App\Providers;
 
+use App\Channels\WhatsAppChannel;
 use App\Services\AttendanceService;
 use App\Services\EnrollmentService;
 use App\Services\InvoiceService;
 use App\Services\ReportCardService;
+use App\Services\WhatsAppService;
 use App\Actions\ConfirmEnrollmentAction;
 use App\Actions\CreateEnrollmentAction;
 use App\Actions\RecordPaymentAction;
 use App\Actions\GenerateReportCardAction;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
 
@@ -42,6 +45,11 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Register WhatsApp notification channel
+        Notification::extend('whatsapp', fn ($app) => new WhatsAppChannel(
+            $app->make(WhatsAppService::class)
+        ));
+
         // Set locale from session or authenticated user preference
         $this->app['events']->listen('Illuminate\Auth\Events\Authenticated', function ($event) {
             $user = $event->user;

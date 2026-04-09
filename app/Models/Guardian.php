@@ -26,6 +26,7 @@ class Guardian extends Model
         'gender',
         'phone',
         'phone_secondary',
+        'whatsapp_number',
         'email',
         'profession',
         'national_id',

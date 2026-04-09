@@ -19,8 +19,9 @@ new #[Layout('layouts.app')] class extends Component {
     // Personal info
     public string $name        = '';
     public string $email       = '';
-    public string $phone       = '';
+    public string $phone           = '';
     public string $phone_secondary = '';
+    public string $whatsapp_number = '';
     public string $gender      = '';
     public string $profession  = '';
     public string $national_id = '';
@@ -39,6 +40,7 @@ new #[Layout('layouts.app')] class extends Component {
             'email'           => 'nullable|email|max:200|unique:guardians,email',
             'phone'           => 'nullable|string|max:30',
             'phone_secondary' => 'nullable|string|max:30',
+            'whatsapp_number' => 'nullable|string|max:30',
             'gender'          => 'nullable|in:male,female',
             'profession'      => 'nullable|string|max:200',
             'national_id'     => 'nullable|string|max:50',
@@ -56,6 +58,7 @@ new #[Layout('layouts.app')] class extends Component {
             'email'           => $this->email ?: null,
             'phone'           => $this->phone ?: null,
             'phone_secondary' => $this->phone_secondary ?: null,
+            'whatsapp_number' => $this->whatsapp_number ?: null,
             'gender'          => $this->gender ?: null,
             'profession'      => $this->profession ?: null,
             'national_id'     => $this->national_id ?: null,
@@ -84,13 +87,15 @@ new #[Layout('layouts.app')] class extends Component {
         if ($guardian->email && !User::where('email', $guardian->email)->exists()) {
             $plainPassword = Str::password(12, symbols: false);
             $user = User::create([
-                'uuid'       => (string) Str::uuid(),
-                'school_id'  => $schoolId,
-                'name'       => $guardian->full_name,
-                'email'      => $guardian->email,
-                'password'   => Hash::make($plainPassword),
-                'ui_lang'    => 'fr',
-                'timezone'   => 'Africa/Djibouti',
+                'uuid'             => (string) Str::uuid(),
+                'school_id'        => $schoolId,
+                'name'             => $guardian->full_name,
+                'email'            => $guardian->email,
+                'password'         => Hash::make($plainPassword),
+                'phone'            => $guardian->phone,
+                'whatsapp_number'  => $guardian->whatsapp_number,
+                'ui_lang'          => 'fr',
+                'timezone'         => 'Africa/Djibouti',
             ]);
             $user->assignRole('guardian');
             $guardian->update(['user_id' => $user->id]);
@@ -177,6 +182,10 @@ new #[Layout('layouts.app')] class extends Component {
                             <x-input label="Téléphone secondaire" wire:model="phone_secondary"
                                      placeholder="+253 77 00 00 01" icon="o-phone" />
                         </div>
+
+                        <x-input label="WhatsApp" wire:model="whatsapp_number"
+                                 placeholder="+253 77 00 00 00" icon="o-chat-bubble-left-ellipsis"
+                                 hint="Laissez vide pour utiliser le téléphone principal" />
 
                         <div class="grid grid-cols-2 gap-4">
                             <x-input label="Profession" wire:model="profession"

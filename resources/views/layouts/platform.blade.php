@@ -25,10 +25,7 @@
             <x-icon name="o-bars-3" class="w-6 h-6 text-slate-600" />
         </label>
         <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg portal-gradient flex items-center justify-center shrink-0">
-                <x-icon name="o-building-library" class="w-4 h-4 text-white" />
-            </div>
-            <span class="font-black text-base text-slate-800">ScolApp</span>
+            <img src="{{ asset('images/logo_ScolApp.png') }}" alt="ScolApp" class="h-8 object-contain">
             <span class="text-xs font-semibold bg-slate-800 text-white px-2 py-0.5 rounded-full hidden sm:inline">PLATFORM</span>
         </div>
     </x-slot:brand>
@@ -53,9 +50,7 @@
     <x-slot:sidebar drawer="platform-drawer" collapsible class="sidebar-platform text-white">
         <div class="portal-gradient p-5 mb-2">
             <div class="flex items-center gap-3">
-                <div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm shrink-0">
-                    <x-icon name="o-building-library" class="w-6 h-6 text-white" />
-                </div>
+                <img src="{{ asset('images/logo_ScolApp.png') }}" alt="ScolApp" class="w-11 h-11 rounded-xl object-contain shrink-0">
                 <div class="min-w-0">
                     <p class="font-bold text-white text-sm truncate">{{ auth()->user()?->full_name }}</p>
                     <p class="text-slate-300 text-xs">Super Administrateur</p>

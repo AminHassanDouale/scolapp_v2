@@ -28,7 +28,7 @@
             @if(auth()->user()?->school?->logo)
                 <img src="{{ auth()->user()->school->logo_url }}" alt="" class="w-7 h-7 rounded-lg object-cover shrink-0 ring-1 ring-current/20">
             @else
-                <div class="w-7 h-7 rounded-lg portal-gradient flex items-center justify-center shrink-0 font-black text-white text-xs">{{ strtoupper(substr(auth()->user()?->school?->name ?? 'S', 0, 1)) }}</div>
+                <img src="{{ asset('images/logo_ScolApp.png') }}" alt="ScolApp" class="w-7 h-7 rounded-lg object-contain shrink-0">
             @endif
             <span class="font-black text-sm truncate max-w-36 hidden sm:block">{{ auth()->user()?->school?->name }}</span>
         </div>
@@ -57,7 +57,7 @@
                 @if(auth()->user()?->school?->logo)
                     <img src="{{ auth()->user()->school->logo_url }}" alt="" class="w-11 h-11 rounded-xl object-cover shrink-0 ring-2 ring-white/30">
                 @else
-                    <div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm shrink-0 font-black text-white text-lg">{{ strtoupper(substr(auth()->user()?->school?->name ?? 'S', 0, 2)) }}</div>
+                    <img src="{{ asset('images/logo_ScolApp.png') }}" alt="ScolApp" class="w-11 h-11 rounded-xl object-contain shrink-0">
                 @endif
                 <div class="min-w-0">
                     <p class="font-bold text-white text-sm truncate">{{ auth()->user()?->full_name }}</p>

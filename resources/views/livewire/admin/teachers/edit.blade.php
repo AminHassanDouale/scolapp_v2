@@ -17,7 +17,8 @@ new #[Layout('layouts.app')] class extends Component {
 
     public string $name           = '';
     public string $email          = '';
-    public string $phone          = '';
+    public string $phone           = '';
+    public string $whatsapp_number = '';
     public string $gender         = '';
     public string $hire_date      = '';
     public string $specialization = '';
@@ -39,6 +40,7 @@ new #[Layout('layouts.app')] class extends Component {
             'name'           => $this->teacher->name,
             'email'          => $this->teacher->email ?? '',
             'phone'          => $this->teacher->phone ?? '',
+            'whatsapp_number'=> $this->teacher->whatsapp_number ?? '',
             'gender'         => $this->teacher->gender?->value ?? '',
             'hire_date'      => $this->teacher->hire_date?->format('Y-m-d') ?? '',
             'specialization' => $this->teacher->specialization ?? '',
@@ -57,6 +59,7 @@ new #[Layout('layouts.app')] class extends Component {
             'name'           => 'required|string|max:200',
             'email'          => 'nullable|email|max:200|unique:teachers,email,' . $this->teacher->id,
             'phone'          => 'nullable|string|max:30',
+            'whatsapp_number'=> 'nullable|string|max:30',
             'gender'         => 'nullable|in:male,female',
             'hire_date'      => 'nullable|date',
             'specialization' => 'nullable|string|max:200',
@@ -66,6 +69,7 @@ new #[Layout('layouts.app')] class extends Component {
             'name'           => $this->name,
             'email'          => $this->email ?: null,
             'phone'          => $this->phone ?: null,
+            'whatsapp_number'=> $this->whatsapp_number ?: null,
             'gender'         => $this->gender ?: null,
             'hire_date'      => $this->hire_date ?: null,
             'specialization' => $this->specialization ?: null,
@@ -76,6 +80,13 @@ new #[Layout('layouts.app')] class extends Component {
 
         $this->teacher->subjects()->sync($this->subjectIds);
         $this->teacher->schoolClasses()->sync($this->classIds);
+
+        if ($this->teacher->user_id) {
+            $this->teacher->user?->update([
+                'phone'           => $this->phone ?: null,
+                'whatsapp_number' => $this->whatsapp_number ?: null,
+            ]);
+        }
 
         $this->success('Enseignant mis à jour.', position: 'toast-top toast-end', icon: 'o-pencil-square', css: 'alert-success', timeout: 3000);
     }
@@ -154,6 +165,9 @@ new #[Layout('layouts.app')] class extends Component {
                         <x-input label="Email" wire:model="email" type="email" icon="o-envelope" />
                         <x-input label="Téléphone" wire:model="phone" icon="o-phone" />
                     </div>
+                    <x-input label="WhatsApp" wire:model="whatsapp_number"
+                             icon="o-chat-bubble-left-ellipsis"
+                             hint="Laissez vide pour utiliser le téléphone" />
                     <div class="grid grid-cols-2 gap-4">
                         <x-select label="Genre" wire:model="gender"
                                   :options="$genders" option-value="id" option-label="name"

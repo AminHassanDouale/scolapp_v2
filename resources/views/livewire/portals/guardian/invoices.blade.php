@@ -174,7 +174,7 @@ new #[Layout('layouts.guardian')] class extends Component {
         $this->validate([
             'payTransactionRef' => 'required|string|min:4|max:100',
             'payPhone'          => 'required|string|min:8|max:20',
-            'payMethod'         => 'required|in:waafi,cac_pay,e_dahab',
+            'payMethod'         => 'required|in:waafi,cac_pay,exim_pay,saba_pay,e_dahab',
         ]);
 
         $invoice = Invoice::with('enrollment')->find($this->payInvoiceId);
@@ -191,10 +191,12 @@ new #[Layout('layouts.guardian')] class extends Component {
         }
 
         $methodLabels = [
-            'd_money' => 'D-Money',
-            'waafi'   => 'Waafi',
-            'cac_pay' => 'Cac Pay',
-            'e_dahab' => 'E-Dahab',
+            'd_money'  => 'D-Money',
+            'waafi'    => 'Waafi',
+            'cac_pay'  => 'Cac Pay',
+            'exim_pay' => 'Exim Pay',
+            'saba_pay' => 'Saba Pay',
+            'e_dahab'  => 'E-Dahab',
         ];
 
         $payment = Payment::create([
@@ -474,6 +476,18 @@ new #[Layout('layouts.guardian')] class extends Component {
             />
             @endif
 
+            {{-- Payment method symbols --}}
+            @if($canPay)
+            <div class="flex items-center gap-1.5 ml-auto flex-wrap">
+                <span class="text-xs text-base-content/30">Accepté :</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-700">D-Money</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-green-100 text-green-700">Waafi</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-red-100 text-red-700">Cac Pay</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-blue-100 text-blue-700">Exim Pay</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-orange-100 text-orange-700">Saba Pay</span>
+            </div>
+            @endif
+
             {{-- Print button --}}
             <a href="{{ route('guardian.invoices.print', $invoice->uuid) }}" target="_blank">
                 <x-button label="Imprimer" icon="o-printer" class="btn-ghost btn-sm" />
@@ -551,7 +565,7 @@ new #[Layout('layouts.guardian')] class extends Component {
         {{-- Step 1: Choose method --}}
         <p class="text-xs font-bold text-base-content/50 uppercase tracking-wider mb-2">1. Choisissez votre opérateur</p>
         <div class="grid grid-cols-2 gap-2 mb-4">
-            @foreach(['waafi' => ['label' => 'Waafi', 'icon' => 'o-device-phone-mobile', 'color' => 'from-green-500 to-green-700'], 'cac_pay' => ['label' => 'Cac Pay', 'icon' => 'o-credit-card', 'color' => 'from-red-500 to-red-700'], 'e_dahab' => ['label' => 'E-Dahab', 'icon' => 'o-banknotes', 'color' => 'from-yellow-500 to-amber-600']] as $key => $info)
+            @foreach(['waafi' => ['label' => 'Waafi', 'icon' => 'o-device-phone-mobile', 'color' => 'from-green-500 to-green-700'], 'cac_pay' => ['label' => 'Cac Pay', 'icon' => 'o-credit-card', 'color' => 'from-red-500 to-red-700'], 'exim_pay' => ['label' => 'Exim Pay', 'icon' => 'o-building-library', 'color' => 'from-blue-600 to-blue-800'], 'saba_pay' => ['label' => 'Saba Pay', 'icon' => 'o-banknotes', 'color' => 'from-orange-500 to-orange-700'], 'e_dahab' => ['label' => 'E-Dahab', 'icon' => 'o-banknotes', 'color' => 'from-yellow-500 to-amber-600']] as $key => $info)
             <button wire:click="$set('payMethod', '{{ $key }}')"
                 class="flex items-center gap-2 p-3 rounded-xl border-2 transition-all
                     {{ $payMethod === $key ? 'border-primary bg-primary/10 shadow-sm' : 'border-base-200 hover:border-primary/40' }}">
@@ -572,6 +586,8 @@ new #[Layout('layouts.guardian')] class extends Component {
             'd_money' => ['number' => $school?->phone ?? '+253 77 XX XX XX', 'name' => 'D-Money Dahabshiil', 'steps' => ['Ouvrez votre application D-Money', 'Sélectionnez "Payer un marchand"', 'Entrez le numéro : <strong>' . ($school?->phone ?? '+253 77 XX XX XX') . '</strong>', 'Montant : <strong>' . number_format($payInvoice->balance_due, 0, ',', ' ') . ' DJF</strong>', 'Confirmez avec votre code PIN']],
             'waafi'   => ['number' => $school?->phone ?? '+253 63 XX XX XX', 'name' => 'Waafi Telesom', 'steps' => ['Composez le <strong>*843#</strong> sur votre téléphone', 'Sélectionnez "Paiement marchand"', 'Entrez le numéro : <strong>' . ($school?->phone ?? '+253 63 XX XX XX') . '</strong>', 'Montant : <strong>' . number_format($payInvoice->balance_due, 0, ',', ' ') . ' DJF</strong>', 'Validez votre paiement']],
             'cac_pay' => ['number' => 'CAC-' . ($school?->id ?? 'XXXX'), 'name' => 'Cac Pay', 'steps' => ['Ouvrez votre application Cac Pay', 'Sélectionnez "Payer"', 'Entrez le code marchand : <strong>CAC-' . ($school?->id ?? 'XXXX') . '</strong>', 'Montant : <strong>' . number_format($payInvoice->balance_due, 0, ',', ' ') . ' DJF</strong>', 'Confirmez avec votre code PIN']],
+            'exim_pay' => ['number' => $school?->phone ?? '+253 XX XX XX XX', 'name' => 'Exim Pay', 'steps' => ['Ouvrez votre application Exim Pay', 'Sélectionnez "Paiement marchand"', 'Entrez le numéro : <strong>' . ($school?->phone ?? '+253 XX XX XX XX') . '</strong>', 'Montant : <strong>' . number_format($payInvoice->balance_due, 0, ',', ' ') . ' DJF</strong>', 'Confirmez avec votre code PIN']],
+            'saba_pay' => ['number' => $school?->phone ?? '+253 XX XX XX XX', 'name' => 'Saba Pay', 'steps' => ['Ouvrez votre application Saba Pay', 'Sélectionnez "Paiement"', 'Entrez le numéro : <strong>' . ($school?->phone ?? '+253 XX XX XX XX') . '</strong>', 'Montant : <strong>' . number_format($payInvoice->balance_due, 0, ',', ' ') . ' DJF</strong>', 'Validez le paiement']],
             'e_dahab' => ['number' => $school?->phone ?? '+253 XX XX XX XX', 'name' => 'E-Dahab IBS', 'steps' => ['Ouvrez votre application E-Dahab', 'Sélectionnez "Transfert / Paiement"', 'Entrez le numéro : <strong>' . ($school?->phone ?? '+253 XX XX XX XX') . '</strong>', 'Montant : <strong>' . number_format($payInvoice->balance_due, 0, ',', ' ') . ' DJF</strong>', 'Validez le paiement']],
         ];
         $inst = $instructions[$payMethod];

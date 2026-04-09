@@ -21,6 +21,8 @@ new #[Layout('layouts.app')] class extends Component {
     public string $cf_email      = '';
     public string $cf_password   = '';
     public string $cf_role       = 'admin';
+    public string $cf_phone      = '';
+    public string $cf_whatsapp   = '';
     public bool   $cf_is_blocked = false;
 
     public function updatingSearch(): void { $this->resetPage(); }
@@ -35,10 +37,12 @@ new #[Layout('layouts.app')] class extends Component {
         ]);
 
         $user = User::create([
-            'name'      => $this->cf_name,
-            'email'     => $this->cf_email,
-            'password'  => Hash::make($this->cf_password),
-            'school_id' => auth()->user()->school_id,
+            'name'             => $this->cf_name,
+            'email'            => $this->cf_email,
+            'password'         => Hash::make($this->cf_password),
+            'phone'            => $this->cf_phone ?: null,
+            'whatsapp_number'  => $this->cf_whatsapp ?: null,
+            'school_id'        => auth()->user()->school_id,
         ]);
 
         $user->assignRole($this->cf_role);
@@ -51,13 +55,15 @@ new #[Layout('layouts.app')] class extends Component {
     public function editUser(int $id): void
     {
         $user = User::with('roles')->findOrFail($id);
-        $this->editId       = $id;
-        $this->cf_name      = $user->name ?? '';
-        $this->cf_email     = $user->email;
-        $this->cf_password  = '';
-        $this->cf_role      = $user->roles->first()?->name ?? 'admin';
+        $this->editId        = $id;
+        $this->cf_name       = $user->name ?? '';
+        $this->cf_email      = $user->email;
+        $this->cf_password   = '';
+        $this->cf_role       = $user->roles->first()?->name ?? 'admin';
+        $this->cf_phone      = $user->phone ?? '';
+        $this->cf_whatsapp   = $user->whatsapp_number ?? '';
         $this->cf_is_blocked = $user->is_blocked ?? false;
-        $this->showEdit     = true;
+        $this->showEdit      = true;
     }
 
     public function updateUser(): void
@@ -69,7 +75,12 @@ new #[Layout('layouts.app')] class extends Component {
         ]);
 
         $user = User::findOrFail($this->editId);
-        $update = ['name' => $this->cf_name, 'email' => $this->cf_email];
+        $update = [
+            'name'            => $this->cf_name,
+            'email'           => $this->cf_email,
+            'phone'           => $this->cf_phone ?: null,
+            'whatsapp_number' => $this->cf_whatsapp ?: null,
+        ];
 
         if ($this->cf_password) {
             $this->validate(['cf_password' => 'min:8']);
@@ -116,6 +127,7 @@ new #[Layout('layouts.app')] class extends Component {
     private function resetForm(): void
     {
         $this->cf_name = $this->cf_email = $this->cf_password = '';
+        $this->cf_phone = $this->cf_whatsapp = '';
         $this->cf_role = 'admin';
         $this->cf_is_blocked = false;
         $this->editId = 0;
@@ -244,6 +256,12 @@ new #[Layout('layouts.app')] class extends Component {
             <x-input label="Mot de passe *" wire:model="cf_password" type="password" required />
             <x-select label="Rôle *" wire:model="cf_role"
                       :options="$roleOptions" option-value="id" option-label="name" />
+            <div class="grid grid-cols-2 gap-4">
+                <x-input label="Téléphone" wire:model="cf_phone"
+                         placeholder="+253 77 00 00 00" icon="o-phone" />
+                <x-input label="WhatsApp" wire:model="cf_whatsapp"
+                         placeholder="+253 77 00 00 00" icon="o-chat-bubble-left-ellipsis" />
+            </div>
             <x-slot:actions>
                 <x-button label="Annuler" @click="$wire.showCreate = false" class="btn-ghost" />
                 <x-button label="Créer" type="submit" icon="o-check" class="btn-primary" spinner />
@@ -260,6 +278,12 @@ new #[Layout('layouts.app')] class extends Component {
                      wire:model="cf_password" type="password" />
             <x-select label="Rôle *" wire:model="cf_role"
                       :options="$roleOptions" option-value="id" option-label="name" />
+            <div class="grid grid-cols-2 gap-4">
+                <x-input label="Téléphone" wire:model="cf_phone"
+                         placeholder="+253 77 00 00 00" icon="o-phone" />
+                <x-input label="WhatsApp" wire:model="cf_whatsapp"
+                         placeholder="+253 77 00 00 00" icon="o-chat-bubble-left-ellipsis" />
+            </div>
             <x-checkbox label="Compte bloqué" wire:model="cf_is_blocked" />
             <x-slot:actions>
                 <x-button label="Annuler" @click="$wire.showEdit = false" class="btn-ghost" />

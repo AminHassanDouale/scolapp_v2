@@ -32,6 +32,7 @@ class Teacher extends Model
         'date_of_birth',
         'national_id',
         'phone',
+        'whatsapp_number',
         'email',
         'specialization',
         'hire_date',

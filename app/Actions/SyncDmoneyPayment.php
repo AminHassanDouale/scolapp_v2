@@ -10,6 +10,7 @@ use App\Models\Guardian;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
+use App\Notifications\PaymentConfirmedNotification;
 use App\Services\BillingApiService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -150,12 +151,26 @@ class SyncDmoneyPayment
             return;
         }
 
+        $payment->load('school', 'student', 'paymentAllocations.invoice.enrollment.schoolClass');
+
+        // Email — receipt + invoice PDF
         try {
-            $payment->load('school', 'student', 'paymentAllocations.invoice.enrollment.schoolClass');
             Mail::to($guardian->email ?? $guardian->user->email)
                 ->queue(new PaymentReceivedMail($payment, $guardian));
         } catch (\Throwable $e) {
             Log::error('SyncDmoneyPayment: failed to queue email', [
+                'payment_id' => $payment->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
+
+        // WhatsApp — instant text confirmation
+        try {
+            if ($guardian->user) {
+                $guardian->user->notify(new PaymentConfirmedNotification($payment, $guardian));
+            }
+        } catch (\Throwable $e) {
+            Log::error('SyncDmoneyPayment: failed to queue WhatsApp notification', [
                 'payment_id' => $payment->id,
                 'error'      => $e->getMessage(),
             ]);

@@ -47,6 +47,7 @@ new #[Layout('layouts.app')] class extends Component {
     // New guardian fields
     public string $g_name        = '';
     public string $g_phone       = '';
+    public string $g_whatsapp    = '';
     public string $g_email       = '';
     public string $g_profession  = '';
     public string $g_national_id = '';
@@ -93,6 +94,7 @@ new #[Layout('layouts.app')] class extends Component {
             $this->validate([
                 'g_name'         => 'required|string|max:200',
                 'g_phone'        => 'required|string|max:30',
+                'g_whatsapp'     => 'nullable|string|max:30',
                 'g_email'        => 'nullable|email|max:150',
                 'guardianPhoto'  => 'nullable|image|max:2048',
                 'docGuardianId'  => 'nullable|file|max:10240|mimes:pdf,jpg,jpeg,png,webp',
@@ -160,13 +162,14 @@ new #[Layout('layouts.app')] class extends Component {
             $guardian = Guardian::findOrFail($this->existingGuardianId);
         } else {
             $guardian = Guardian::create([
-                'school_id'   => $schoolId,
-                'name'        => $this->g_name,
-                'phone'       => $this->g_phone,
-                'email'       => $this->g_email ?: null,
-                'profession'  => $this->g_profession ?: null,
-                'national_id' => $this->g_national_id ?: null,
-                'is_active'   => true,
+                'school_id'        => $schoolId,
+                'name'             => $this->g_name,
+                'phone'            => $this->g_phone,
+                'whatsapp_number'  => $this->g_whatsapp ?: null,
+                'email'            => $this->g_email ?: null,
+                'profession'       => $this->g_profession ?: null,
+                'national_id'      => $this->g_national_id ?: null,
+                'is_active'        => true,
             ]);
 
             // Guardian photo
@@ -477,6 +480,8 @@ new #[Layout('layouts.app')] class extends Component {
                             <x-input label="Téléphone *" wire:model="g_phone" placeholder="+253 77 00 00 00" required />
                             <x-input label="Email" wire:model="g_email" type="email" placeholder="ahmed@example.com" />
                         </div>
+                        <x-input label="WhatsApp" wire:model="g_whatsapp" placeholder="+253 77 00 00 00"
+                                 hint="Laissez vide si identique au téléphone" />
                         <div class="grid grid-cols-2 gap-4">
                             <x-input label="Profession" wire:model="g_profession" placeholder="Enseignant" />
                             <x-input label="N° d'identité nationale" wire:model="g_national_id" placeholder="DJ123456" />

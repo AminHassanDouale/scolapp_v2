@@ -17,7 +17,8 @@ new #[Layout('layouts.app')] class extends Component {
 
     public string $name           = '';
     public string $email          = '';
-    public string $phone          = '';
+    public string $phone           = '';
+    public string $whatsapp_number = '';
     public string $gender         = '';
     public string $hire_date      = '';
     public string $specialization = '';
@@ -32,6 +33,7 @@ new #[Layout('layouts.app')] class extends Component {
             'name'           => 'required|string|max:200',
             'email'          => 'required|email|unique:teachers,email',
             'phone'          => 'nullable|string|max:30',
+            'whatsapp_number'=> 'nullable|string|max:30',
             'gender'         => 'nullable|in:male,female',
             'hire_date'      => 'nullable|date',
             'specialization' => 'nullable|string|max:200',
@@ -43,6 +45,7 @@ new #[Layout('layouts.app')] class extends Component {
             'name'           => $this->name,
             'email'          => $this->email,
             'phone'          => $this->phone ?: null,
+            'whatsapp_number'=> $this->whatsapp_number ?: null,
             'gender'         => $this->gender ?: null,
             'hire_date'      => $this->hire_date ?: null,
             'specialization' => $this->specialization ?: null,
@@ -65,13 +68,15 @@ new #[Layout('layouts.app')] class extends Component {
         if ($teacher->email && !User::where('email', $teacher->email)->exists()) {
             $plainPassword = Str::password(12, symbols: false);
             $user = User::create([
-                'uuid'       => (string) Str::uuid(),
-                'school_id'  => auth()->user()->school_id,
-                'name'       => $teacher->full_name,
-                'email'      => $teacher->email,
-                'password'   => Hash::make($plainPassword),
-                'ui_lang'    => 'fr',
-                'timezone'   => 'Africa/Djibouti',
+                'uuid'             => (string) Str::uuid(),
+                'school_id'        => auth()->user()->school_id,
+                'name'             => $teacher->full_name,
+                'email'            => $teacher->email,
+                'password'         => Hash::make($plainPassword),
+                'phone'            => $teacher->phone,
+                'whatsapp_number'  => $teacher->whatsapp_number,
+                'ui_lang'          => 'fr',
+                'timezone'         => 'Africa/Djibouti',
             ]);
             $user->assignRole('teacher');
             $teacher->update(['user_id' => $user->id]);
@@ -137,6 +142,10 @@ new #[Layout('layouts.app')] class extends Component {
                             <x-input label="Téléphone" wire:model="phone"
                                      placeholder="+253 77 00 00 00" icon="o-phone" />
                         </div>
+
+                        <x-input label="WhatsApp" wire:model="whatsapp_number"
+                                 placeholder="+253 77 00 00 00" icon="o-chat-bubble-left-ellipsis"
+                                 hint="Laissez vide pour utiliser le téléphone" />
 
                         <div class="grid grid-cols-2 gap-4">
                             <x-select label="Genre" wire:model="gender"

@@ -18,7 +18,7 @@
     <div class="w-full max-w-md px-4">
         {{-- Logo --}}
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-black text-primary">ScolApp</h1>
+            <img src="{{ asset('images/logo_ScolApp.png') }}" alt="ScolApp" class="h-16 mx-auto object-contain">
             <p class="text-base-content/60 font-light tracking-widest text-sm uppercase mt-1">School Management</p>
         </div>
 

@@ -18,6 +18,7 @@ new #[Layout('layouts.app')] class extends Component {
     public string $email           = '';
     public string $phone           = '';
     public string $phone_secondary = '';
+    public string $whatsapp_number = '';
     public string $gender          = '';
     public string $profession      = '';
     public string $national_id     = '';
@@ -37,6 +38,7 @@ new #[Layout('layouts.app')] class extends Component {
             'email'           => $this->guardian->email ?? '',
             'phone'           => $this->guardian->phone ?? '',
             'phone_secondary' => $this->guardian->phone_secondary ?? '',
+            'whatsapp_number' => $this->guardian->whatsapp_number ?? '',
             'gender'          => $this->guardian->gender?->value ?? '',
             'profession'      => $this->guardian->profession ?? '',
             'national_id'     => $this->guardian->national_id ?? '',
@@ -52,6 +54,7 @@ new #[Layout('layouts.app')] class extends Component {
             'email'           => 'nullable|email|max:200|unique:guardians,email,' . $this->guardian->id,
             'phone'           => 'nullable|string|max:30',
             'phone_secondary' => 'nullable|string|max:30',
+            'whatsapp_number' => 'nullable|string|max:30',
             'gender'          => 'nullable|in:male,female',
             'profession'      => 'nullable|string|max:200',
             'national_id'     => 'nullable|string|max:50',
@@ -63,6 +66,7 @@ new #[Layout('layouts.app')] class extends Component {
             'email'           => $this->email ?: null,
             'phone'           => $this->phone ?: null,
             'phone_secondary' => $this->phone_secondary ?: null,
+            'whatsapp_number' => $this->whatsapp_number ?: null,
             'gender'          => $this->gender ?: null,
             'profession'      => $this->profession ?: null,
             'national_id'     => $this->national_id ?: null,
@@ -73,7 +77,9 @@ new #[Layout('layouts.app')] class extends Component {
         // Sync name on linked user account if exists
         if ($this->guardian->user_id) {
             $this->guardian->user?->update([
-                'name'       => $this->guardian->full_name,
+                'name'             => $this->guardian->full_name,
+                'phone'            => $this->phone ?: null,
+                'whatsapp_number'  => $this->whatsapp_number ?: null,
             ]);
         }
 
@@ -157,6 +163,9 @@ new #[Layout('layouts.app')] class extends Component {
                         <x-input label="Téléphone principal" wire:model="phone" icon="o-phone" />
                         <x-input label="Téléphone secondaire" wire:model="phone_secondary" icon="o-phone" />
                     </div>
+                    <x-input label="WhatsApp" wire:model="whatsapp_number"
+                             icon="o-chat-bubble-left-ellipsis"
+                             hint="Laissez vide pour utiliser le téléphone principal" />
                     <div class="grid grid-cols-2 gap-4">
                         <x-input label="Profession" wire:model="profession" icon="o-briefcase" />
                         <x-input label="CIN / Passeport" wire:model="national_id" icon="o-identification" />

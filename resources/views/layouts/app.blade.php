@@ -27,8 +27,7 @@
         <label for="main-drawer" class="lg:hidden cursor-pointer mr-2 p-1 rounded-lg hover:bg-base-200">
             <x-icon name="o-bars-3" class="w-6 h-6" />
         </label>
-        <span class="font-black text-xl text-primary">ScolApp</span>
-        <span class="font-light text-sm ml-1 text-base-content/50 hidden sm:inline">SMS</span>
+        <img src="{{ asset('images/logo_ScolApp.png') }}" alt="ScolApp" class="h-8 object-contain">
     </x-slot:brand>
 
     <x-slot:actions>
@@ -66,9 +65,7 @@
             @if(auth()->user()?->school?->logo)
                 <img src="{{ auth()->user()->school->logo_url }}" alt="logo" class="w-10 h-10 rounded-full object-cover shrink-0">
             @else
-                <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-content font-bold text-lg shrink-0">
-                    {{ substr(auth()->user()?->school?->name ?? 'S', 0, 1) }}
-                </div>
+                <img src="{{ asset('images/logo_ScolApp.png') }}" alt="ScolApp" class="w-10 h-10 rounded-full object-contain shrink-0">
             @endif
             <div class="min-w-0">
                 <p class="font-bold text-sm truncate">{{ auth()->user()?->school?->name ?? config('app.name') }}</p>

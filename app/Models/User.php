@@ -32,6 +32,7 @@ class User extends Authenticatable
         'avatar',
         'ui_lang',
         'timezone',
+        'whatsapp_number',
         'is_blocked',
         'blocked_reason',
         'blocked_at',
