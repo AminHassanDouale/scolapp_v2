@@ -17,6 +17,7 @@ new #[Layout('layouts.app')] class extends Component {
     public bool   $showFilters  = false;
     public string $sortBy       = 'created_at';
     public string $sortDir      = 'desc';
+    public string $providerFilter = '';
 
     public function updatingSearch(): void { $this->resetPage(); }
 
@@ -42,7 +43,8 @@ new #[Layout('layouts.app')] class extends Component {
                       $s->where('name', 'like', "%{$this->search}%")
                   )
             )
-            ->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
+            ->when($this->statusFilter,   fn($q) => $q->where('status', $this->statusFilter))
+            ->when($this->providerFilter, fn($q) => $q->where('meta->provider', $this->providerFilter))
             ->when($this->dateFrom, fn($q) => $q->whereDate('payment_date', '>=', $this->dateFrom))
             ->when($this->dateTo,   fn($q) => $q->whereDate('payment_date', '<=', $this->dateTo))
             ->orderBy($this->sortBy, $this->sortDir)
@@ -61,7 +63,16 @@ new #[Layout('layouts.app')] class extends Component {
             'totalConfirmed' => $totalConfirmed,
             'totalPending'   => $totalPending,
             'todayTotal'     => $todayTotal,
-            'statusOptions'  => collect(PaymentStatus::cases())->map(fn($s) => ['id' => $s->value, 'name' => $s->label()])->all(),
+            'statusOptions'   => collect(PaymentStatus::cases())->map(fn($s) => ['id' => $s->value, 'name' => $s->label()])->all(),
+            'providerOptions' => [
+                ['id' => '',         'name' => 'Tous les opérateurs'],
+                ['id' => 'd_money',  'name' => 'D-Money'],
+                ['id' => 'waafi',    'name' => 'Waafi'],
+                ['id' => 'cac_pay',  'name' => 'Cac Pay'],
+                ['id' => 'exim_pay', 'name' => 'Exim Pay'],
+                ['id' => 'saba_pay', 'name' => 'Saba Pay'],
+                ['id' => 'e_dahab',  'name' => 'E-Dahab'],
+            ],
         ];
     }
 };
@@ -130,12 +141,30 @@ new #[Layout('layouts.app')] class extends Component {
                     'refunded'  => 'badge-info',
                     default     => 'badge-ghost',
                 };
+                $provider = $payment->meta['provider'] ?? null;
                 $methodLabel = match($payment->payment_method ?? '') {
                     'cash'          => 'Espèces',
                     'bank_transfer' => 'Virement',
                     'check'         => 'Chèque',
-                    'mobile_money'  => 'Mobile Money',
+                    'mobile_money'  => match($provider) {
+                        'd_money'  => 'D-Money',
+                        'waafi'    => 'Waafi',
+                        'cac_pay'  => 'Cac Pay',
+                        'exim_pay' => 'Exim Pay',
+                        'saba_pay' => 'Saba Pay',
+                        'e_dahab'  => 'E-Dahab',
+                        default    => 'Mobile Money',
+                    },
                     default         => $payment->payment_method ?? '—',
+                };
+                $methodColor = match($provider ?? '') {
+                    'd_money'  => 'bg-emerald-100 text-emerald-700',
+                    'waafi'    => 'bg-green-100 text-green-700',
+                    'cac_pay'  => 'bg-red-100 text-red-700',
+                    'exim_pay' => 'bg-blue-100 text-blue-700',
+                    'saba_pay' => 'bg-orange-100 text-orange-700',
+                    'e_dahab'  => 'bg-yellow-100 text-yellow-700',
+                    default    => 'bg-base-200 text-base-content/60',
                 };
             @endphp
             <tr wire:key="payment-{{ $payment->id }}" class="hover">
@@ -147,7 +176,11 @@ new #[Layout('layouts.app')] class extends Component {
                 </td>
                 <td class="font-semibold text-sm">{{ $payment->student?->full_name }}</td>
                 <td class="text-right font-bold">{{ number_format($payment->amount, 0, ',', ' ') }} DJF</td>
-                <td class="text-sm">{{ $methodLabel }}</td>
+                <td>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold {{ $methodColor }}">
+                        {{ $methodLabel }}
+                    </span>
+                </td>
                 <td><x-badge :value="$payment->status->label()" class="{{ $statusClass }} badge-sm" /></td>
                 <td class="text-sm">{{ $payment->payment_date instanceof \Illuminate\Support\Carbon ? $payment->payment_date->format('d/m/Y') : $payment->payment_date }}</td>
                 <td>
@@ -180,12 +213,14 @@ new #[Layout('layouts.app')] class extends Component {
             <x-select label="Statut" wire:model.live="statusFilter"
                       :options="$statusOptions" option-value="id" option-label="name"
                       placeholder="Tous" placeholder-value="" />
+            <x-select label="Opérateur" wire:model.live="providerFilter"
+                      :options="$providerOptions" option-value="id" option-label="name" />
             <x-datepicker label="Du" wire:model.live="dateFrom" icon="o-calendar" :config="['dateFormat' => 'Y-m-d', 'altFormat' => 'd/m/Y', 'altInput' => true, 'locale' => ['firstDayOfWeek' => 1]]" />
             <x-datepicker label="Au" wire:model.live="dateTo" icon="o-calendar" :config="['dateFormat' => 'Y-m-d', 'altFormat' => 'd/m/Y', 'altInput' => true, 'locale' => ['firstDayOfWeek' => 1]]" />
         </div>
         <x-slot:actions>
             <x-button label="Réinitialiser"
-                      wire:click="$set('statusFilter',''); $set('dateFrom',''); $set('dateTo',''); $set('showFilters',false)"
+                      wire:click="$set('statusFilter',''); $set('providerFilter',''); $set('dateFrom',''); $set('dateTo',''); $set('showFilters',false)"
                       class="btn-ghost" />
             <x-button label="Fermer" wire:click="$set('showFilters', false)" class="btn-primary" />
         </x-slot:actions>
