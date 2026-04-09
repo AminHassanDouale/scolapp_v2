@@ -240,6 +240,18 @@ Route::middleware(['auth', 'role:super-admin|admin|director|accountant', 'school
                     Volt::route('/nouveau', 'admin.finance.fee-schedules.create')->middleware('can:fee-schedules.manage')->name('create');
                     Volt::route('/{uuid}',  'admin.finance.fee-schedules.show')->name('show');
                 });
+
+            Route::middleware('can:payments.view')
+                ->prefix('depenses')->name('expenses.')
+                ->group(function () {
+                    Volt::route('/', 'admin.finance.expenses.index')->name('index');
+                });
+
+            Route::middleware('can:payments.view')
+                ->prefix('comptabilite')->name('comptabilite.')
+                ->group(function () {
+                    Volt::route('/', 'admin.finance.comptabilite.index')->name('index');
+                });
         });
 
         // ── Communication ─────────────────────────────────────────────────────

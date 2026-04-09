@@ -142,6 +142,10 @@ class BillingApiService
         string $orderId,
         string $redirectUrl
     ): array {
+        if (! config('billing.enabled', true)) {
+            throw new \RuntimeException('D-Money est temporairement indisponible. Veuillez réessayer plus tard.');
+        }
+
         $notifyUrl = config('billing.notify_url', 'https://scolapp.com/webhooks/billing');
 
         return $this->createPayment(

@@ -23,6 +23,12 @@ return [
     */
     'notify_url' => env('BILLING_NOTIFY_URL', 'https://api.scolapp.com/payment/notify'),
 
+    /*
+    | Set DMONEY_ENABLED=false in .env to disable D-Money payments gracefully
+    | (e.g. while test credentials are being renewed).
+    */
+    'enabled' => env('DMONEY_ENABLED', true),
+
     'timeout' => 30,
 
     'endpoints' => [

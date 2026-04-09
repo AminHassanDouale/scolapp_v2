@@ -123,6 +123,10 @@
                 @can('fee-schedules.view')
                 <x-menu-item :title="__('navigation.fee_schedules')" icon="o-table-cells"              :link="route('admin.finance.fee-schedules.index')" />
                 @endcan
+                @can('payments.view')
+                <x-menu-item title="Dépenses"                        icon="o-arrow-trending-down"       :link="route('admin.finance.expenses.index')" />
+                <x-menu-item title="Comptabilité"                    icon="o-calculator"                :link="route('admin.finance.comptabilite.index')" />
+                @endcan
                 @can('billing.view')
                 <x-menu-item title="Transactions D-Money"            icon="o-device-phone-mobile"       :link="route('admin.billing.index')" />
                 @endcan
