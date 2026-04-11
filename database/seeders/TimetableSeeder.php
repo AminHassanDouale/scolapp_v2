@@ -58,17 +58,21 @@ class TimetableSeeder extends Seeder
             ->with(['grade'])
             ->get();
 
-        $subjects = Subject::where('school_id', $school->id)->get()->keyBy('code');
+        // Key by UPPERCASED code for case-insensitive lookup
+        $subjects = Subject::where('school_id', $school->id)
+            ->get()
+            ->keyBy(fn($s) => strtoupper($s->code));
+
         $teachers = Teacher::where('school_id', $school->id)
             ->where('is_active', true)
             ->with('subjects')
             ->get();
 
-        // Map: subject_code -> teacher
+        // Map: SUBJECT_CODE (upper) -> teacher
         $subjectTeacherMap = [];
         foreach ($teachers as $teacher) {
             foreach ($teacher->subjects as $subj) {
-                $subjectTeacherMap[$subj->code] = $teacher;
+                $subjectTeacherMap[strtoupper($subj->code)] = $teacher;
             }
         }
 
@@ -102,13 +106,13 @@ class TimetableSeeder extends Seeder
             $template->entries()->delete();
 
             foreach ($schedule as [$day, $slotIdx, $subjectCode]) {
-                $subject = $subjects->get($subjectCode);
+                $subject = $subjects->get(strtoupper($subjectCode));
                 if (! $subject) continue;
 
                 $slot    = $this->slots[$slotIdx] ?? null;
                 if (! $slot) continue;
 
-                $teacher = $subjectTeacherMap[$subjectCode] ?? null;
+                $teacher = $subjectTeacherMap[strtoupper($subjectCode)] ?? null;
 
                 TimetableEntry::create([
                     'timetable_template_id' => $template->id,

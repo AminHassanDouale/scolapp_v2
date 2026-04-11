@@ -20,7 +20,7 @@ new #[Layout('layouts.caissier')] class extends Component {
         $overdueInvoices = Invoice::where('school_id', $schoolId)->where('status', 'unpaid')->where('due_date', '<', $today)->count();
 
         $recentPayments = Payment::where('school_id', $schoolId)
-            ->with(['invoice.enrollment.student'])
+            ->with(['student', 'enrollment.schoolClass'])
             ->orderByDesc('payment_date')
             ->limit(8)
             ->get();
@@ -154,8 +154,8 @@ new #[Layout('layouts.caissier')] class extends Component {
                     <x-icon name="o-check-circle" class="w-4 h-4 text-cyan-600" />
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium truncate">{{ $payment->invoice?->enrollment?->student?->full_name }}</p>
-                    <p class="text-xs text-base-content/50">{{ $payment->payment_date?->format('d/m/Y H:i') }}</p>
+                    <p class="text-sm font-medium truncate">{{ $payment->student?->full_name }}</p>
+                    <p class="text-xs text-base-content/50">{{ $payment->enrollment?->schoolClass?->name }} · {{ $payment->payment_date?->format('d/m/Y') }}</p>
                 </div>
                 <span class="font-bold text-sm text-cyan-700 flex-shrink-0">{{ number_format($payment->amount, 0, ',', ' ') }}</span>
             </div>

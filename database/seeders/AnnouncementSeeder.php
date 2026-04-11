@@ -13,7 +13,7 @@ class AnnouncementSeeder extends Seeder
     public function run(): void
     {
         $school = School::where('slug', 'ecole-demo')->first();
-        $admin  = User::where('email', 'admin@scolapp.dj')->first();
+        $admin  = User::where('email', 'admin@scolapp.com')->first();
 
         $announcements = [
             [

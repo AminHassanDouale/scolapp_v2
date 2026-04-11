@@ -15,7 +15,7 @@ class PaymentSeeder extends Seeder
     public function run(): void
     {
         $school  = School::where('slug', 'ecole-demo')->first();
-        $admin   = User::where('email', 'admin@scolapp.dj')->first();
+        $admin   = User::where('email', 'admin@scolapp.com')->first();
         $methods = ['cash', 'bank_transfer', 'mobile_money'];
 
         $invoices = Invoice::where('school_id', $school->id)

@@ -35,7 +35,7 @@ new #[Layout('layouts.caissier')] class extends Component {
             $periodLabel = $date->format('Y');
         }
 
-        $payments = $query->with(['invoice.enrollment.student', 'invoice.enrollment.schoolClass'])
+        $payments = $query->with(['student', 'enrollment.schoolClass'])
             ->orderByDesc('payment_date')
             ->get();
 
@@ -108,8 +108,8 @@ new #[Layout('layouts.caissier')] class extends Component {
                 @forelse($payments as $payment)
                 <tr class="hover border-b border-base-100">
                     <td class="text-sm text-base-content/60 font-mono">{{ $payment->payment_date?->format('H:i') }}</td>
-                    <td class="font-medium">{{ $payment->invoice?->enrollment?->student?->full_name }}</td>
-                    <td class="text-sm">{{ $payment->invoice?->enrollment?->schoolClass?->name ?? '—' }}</td>
+                    <td class="font-medium">{{ $payment->student?->full_name }}</td>
+                    <td class="text-sm">{{ $payment->enrollment?->schoolClass?->name ?? '—' }}</td>
                     <td>
                         @php $badge = match($payment->payment_method) {
                             'cash' => 'badge-success', 'bank_transfer' => 'badge-info',

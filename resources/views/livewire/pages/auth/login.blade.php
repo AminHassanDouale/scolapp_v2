@@ -65,32 +65,96 @@ new #[Layout('layouts.guest')] class extends Component {
 };
 ?>
 
-<div class="card bg-base-100 shadow-xl">
-    <div class="card-body">
-        <h2 class="card-title text-2xl font-bold text-center justify-center mb-4">
-            {{ __('auth.sign_in') }}
-        </h2>
+<div class="space-y-6">
 
-        <x-form wire:submit="login">
-            <x-input
-                :label="__('auth.email')"
-                wire:model="email"
-                type="email"
-                icon="o-envelope"
-                autofocus
-                autocomplete="email"
-            />
-            <x-input
-                :label="__('auth.password')"
-                wire:model="password"
-                type="password"
-                icon="o-lock-closed"
-                autocomplete="current-password"
-            />
-            <x-checkbox :label="__('auth.remember_me')" wire:model="remember" />
-            <x-slot:actions>
-                <x-button :label="__('auth.sign_in')" type="submit" icon="o-arrow-right-end-on-rectangle" class="btn-primary w-full" wire:loading.attr="disabled" spinner="login" />
-            </x-slot:actions>
-        </x-form>
+    {{-- Header --}}
+    <div>
+        <h1 class="text-2xl font-extrabold text-base-content tracking-tight">Bon retour ! 👋</h1>
+        <p class="text-base-content/50 text-sm mt-1">Connectez-vous à votre espace scolaire.</p>
     </div>
+
+    {{-- Form card --}}
+    <div class="bg-base-100 rounded-2xl shadow-lg border border-base-200 p-7">
+
+        {{-- Error banner --}}
+        @if($errors->has('email'))
+        <div class="flex items-start gap-2.5 p-3 rounded-xl bg-error/10 border border-error/20 text-error text-sm mb-5">
+            <svg class="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+            <span>{{ $errors->first('email') }}</span>
+        </div>
+        @endif
+
+        <form wire:submit.prevent="login" class="space-y-4">
+
+            {{-- Email --}}
+            <div class="space-y-1.5">
+                <label class="block text-sm font-semibold text-base-content">
+                    {{ __('auth.email') }}
+                </label>
+                <label class="input input-bordered flex items-center gap-2 @error('email') input-error @enderror">
+                    <svg class="w-4 h-4 shrink-0 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    <input wire:model="email" type="email" autocomplete="email" autofocus
+                           placeholder="vous@ecole.com" class="grow" />
+                </label>
+                @error('email')
+                <p class="text-xs text-error mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Password --}}
+            <div class="space-y-1.5">
+                <label class="block text-sm font-semibold text-base-content">
+                    {{ __('auth.password') }}
+                </label>
+                <label class="input input-bordered flex items-center gap-2 @error('password') input-error @enderror">
+                    <svg class="w-4 h-4 shrink-0 text-base-content/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <input wire:model="password" type="password" autocomplete="current-password"
+                           placeholder="••••••••" class="grow" />
+                </label>
+                @error('password')
+                <p class="text-xs text-error mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Remember --}}
+            <div class="flex items-center gap-2 pt-1">
+                <input type="checkbox" wire:model="remember" id="remember_me"
+                       class="checkbox checkbox-primary checkbox-sm" />
+                <label for="remember_me" class="text-sm text-base-content/65 cursor-pointer select-none">
+                    {{ __('auth.remember_me') }}
+                </label>
+            </div>
+
+            {{-- Submit --}}
+            <button type="submit"
+                    wire:loading.attr="disabled"
+                    wire:target="login"
+                    class="btn btn-primary w-full rounded-xl font-bold h-11 min-h-11 mt-2">
+                <span wire:loading.remove wire:target="login" class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    {{ __('auth.sign_in') }}
+                </span>
+                <span wire:loading wire:target="login" class="loading loading-spinner loading-sm"></span>
+            </button>
+
+        </form>
+    </div>
+
+    {{-- Footer note --}}
+    <p class="text-center text-xs text-base-content/35">
+        Besoin d'aide ? Contactez votre administrateur.
+    </p>
+
 </div>

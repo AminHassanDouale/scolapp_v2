@@ -74,7 +74,7 @@ new #[Layout('layouts.student')] class extends Component {
             <tbody>
                 @forelse($entries as $entry)
                 <tr class="hover border-b border-base-100">
-                    <td>{{ $entry->session?->date?->format('d/m/Y') }}</td>
+                    <td>{{ $entry->session?->session_date?->format('d/m/Y') }}</td>
                     <td>{{ $entry->session?->schoolClass?->name ?? '—' }}</td>
                     <td class="text-center">
                         @php $badge = match($entry->status) { 'present' => 'badge-success', 'absent' => 'badge-error', 'late' => 'badge-warning', 'excused' => 'badge-info', default => 'badge-ghost' };

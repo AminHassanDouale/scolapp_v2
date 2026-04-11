@@ -208,8 +208,8 @@ new #[Layout('layouts.app')] class extends Component {
             4 => 'Jeu',
         ];
 
-        $slots   = $this->getTimeSlots();
-        $entries = $this->template->entries;
+        $timeSlots = $this->getTimeSlots();
+        $entries   = $this->template->entries;
 
         $grid = [];
         foreach ($entries as $entry) {
@@ -260,7 +260,7 @@ new #[Layout('layouts.app')] class extends Component {
         return [
             'days'           => $days,
             'dayShort'       => $dayShort,
-            'slots'          => $slots,
+            'timeSlots'      => $timeSlots,
             'grid'           => $grid,
             'entries'        => $entries,
             'teachers'       => $teachers,
@@ -316,6 +316,10 @@ new #[Layout('layouts.app')] class extends Component {
                     class="join-item btn btn-sm {{ $viewMode === 'teacher' ? 'btn-primary' : 'btn-ghost' }}">
                 <x-icon name="o-user" class="w-4 h-4" /> Vue enseignant
             </button>
+            <button wire:click="$set('viewMode','calendar')"
+                    class="join-item btn btn-sm {{ $viewMode === 'calendar' ? 'btn-primary' : 'btn-ghost' }}">
+                <x-icon name="o-calendar-days" class="w-4 h-4" /> Calendrier
+            </button>
         </div>
 
         <div class="flex items-center gap-4 text-xs text-base-content/50">
@@ -350,7 +354,7 @@ new #[Layout('layouts.app')] class extends Component {
                 </tr>
             </thead>
             <tbody>
-                @foreach($slots as $slot)
+                @foreach($timeSlots as $slot)
                 @php
                     $slotEnd  = \Illuminate\Support\Carbon::createFromFormat('H:i', $slot)->addMinutes($sessionDuration)->format('H:i');
                     $isLunch  = $slot >= '12:00' && $slot < '13:30';
@@ -469,7 +473,7 @@ new #[Layout('layouts.app')] class extends Component {
     @endif
 
     {{-- ── TEACHER VIEW ─────────────────────────────────────────────────────────── --}}
-    @else
+    @elseif($viewMode === 'teacher')
     @php $byTeacher = $entries->groupBy(fn($e) => $e->teacher_id ?? 0); @endphp
     <div class="space-y-6">
         @forelse($byTeacher as $teacherId => $teacherEntries)
@@ -504,7 +508,7 @@ new #[Layout('layouts.app')] class extends Component {
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($slots as $slot)
+                        @foreach($timeSlots as $slot)
                         <tr class="hover:bg-base-50">
                             <td class="text-center text-xs text-base-content/50 border-b py-1.5 px-2 font-mono">{{ $slot }}</td>
                             @foreach($days as $dayNum => $dayLabel)
@@ -543,6 +547,41 @@ new #[Layout('layouts.app')] class extends Component {
         </div>
         @endforelse
     </div>
+
+    @else
+    {{-- ── CALENDAR VIEW ─────────────────────────────────────────────────────────── --}}
+    @php
+        $calColors  = ['!bg-sky-200','!bg-emerald-200','!bg-violet-200','!bg-rose-200',
+                       '!bg-amber-200','!bg-teal-200','!bg-fuchsia-200','!bg-orange-200'];
+        $calEvents  = [];
+        $monthStart = now()->startOfMonth();
+        $monthEnd   = now()->endOfMonth();
+        foreach ($entries->groupBy('day_of_week') as $dow => $dowEntries) {
+            $d = $monthStart->copy();
+            while ($d->lte($monthEnd)) {
+                if ($d->dayOfWeek === (int) $dow) {
+                    foreach ($dowEntries as $e) {
+                        $calEvents[] = [
+                            'label'       => $e->subject?->name ?? 'Cours',
+                            'description' => substr($e->start_time, 0, 5) . '–' . substr($e->end_time, 0, 5)
+                                             . ($e->teacher ? ' · ' . $e->teacher->full_name : ''),
+                            'css'         => $calColors[($e->subject_id ?? 0) % 8],
+                            'date'        => $d->copy(),
+                        ];
+                    }
+                }
+                $d->addDay();
+            }
+        }
+    @endphp
+    <x-card shadow class="border-0">
+        <div class="flex items-center justify-between mb-4">
+            <p class="text-sm font-semibold text-base-content/70">
+                {{ now()->translatedFormat('F Y') }} — {{ $entries->count() }} créneau(x) / semaine
+            </p>
+        </div>
+        <x-calendar :events="$calEvents" locale="fr-FR" />
+    </x-card>
     @endif
 
 

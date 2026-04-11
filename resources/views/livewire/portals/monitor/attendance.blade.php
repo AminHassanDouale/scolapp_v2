@@ -23,7 +23,7 @@ new #[Layout('layouts.monitor')] class extends Component {
         $schoolId = auth()->user()->school_id;
 
         $entries = AttendanceEntry::whereHas('session', function($q) use ($schoolId) {
-                $q->where('school_id', $schoolId)->whereDate('date', $this->selectedDate);
+                $q->where('school_id', $schoolId)->whereDate('session_date', $this->selectedDate);
                 if ($this->filterClassId) $q->where('school_class_id', $this->filterClassId);
             })
             ->when($this->filterStatus, fn($q) => $q->where('status', $this->filterStatus))
@@ -70,7 +70,7 @@ new #[Layout('layouts.monitor')] class extends Component {
                 <tr class="hover border-b border-base-100">
                     <td class="font-medium">{{ $entry->student?->full_name }}</td>
                     <td>{{ $entry->session?->schoolClass?->name ?? '—' }}</td>
-                    <td class="text-sm text-base-content/60">{{ $entry->session?->date?->format('d/m/Y') }}</td>
+                    <td class="text-sm text-base-content/60">{{ $entry->session?->session_date?->format('d/m/Y') }}</td>
                     <td class="text-center">
                         @php $badge = match($entry->status) {
                             'present' => 'badge-success',

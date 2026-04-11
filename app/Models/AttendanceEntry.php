@@ -36,6 +36,12 @@ class AttendanceEntry extends Model
         return $this->belongsTo(AttendanceSession::class);
     }
 
+    /** Alias for attendanceSession() — used in portal views. */
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(AttendanceSession::class, 'attendance_session_id');
+    }
+
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);

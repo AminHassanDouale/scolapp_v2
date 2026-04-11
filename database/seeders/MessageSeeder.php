@@ -15,7 +15,7 @@ class MessageSeeder extends Seeder
     public function run(): void
     {
         $school  = School::where('slug', 'ecole-demo')->first();
-        $admin   = User::where('email', 'admin@scolapp.dj')->first();
+        $admin   = User::where('email', 'admin@scolapp.com')->first();
         $teachers = User::where('school_id', $school->id)->role('teacher')->take(3)->get();
 
         if ($teachers->isEmpty()) {

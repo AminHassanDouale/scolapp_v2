@@ -12,15 +12,17 @@ new #[Layout('layouts.monitor')] class extends Component {
         $schoolId = auth()->user()->school_id;
         $classes  = SchoolClass::where('school_id', $schoolId)->where('is_active', true)->orderBy('name')->get();
 
-        $entries = TimetableEntry::whereHas('schoolClass', fn($q) => $q->where('school_id', $schoolId))
-            ->when($this->filterClassId, fn($q) => $q->where('school_class_id', $this->filterClassId))
-            ->with(['subject', 'schoolClass', 'teacher', 'room'])
+        $entries = TimetableEntry::whereHas('template', fn($q) =>
+                $q->where('school_id', $schoolId)->where('is_active', true)
+                  ->when($this->filterClassId, fn($q2) => $q2->where('school_class_id', $this->filterClassId))
+            )
+            ->with(['subject', 'template.schoolClass', 'teacher', 'roomModel'])
             ->orderBy('day_of_week')
             ->orderBy('start_time')
             ->get()
             ->groupBy('day_of_week');
 
-        $days = [1 => 'Lundi', 2 => 'Mardi', 3 => 'Mercredi', 4 => 'Jeudi', 5 => 'Vendredi', 6 => 'Samedi'];
+        $days = [0 => 'Dimanche', 1 => 'Lundi', 2 => 'Mardi', 3 => 'Mercredi', 4 => 'Jeudi'];
 
         return compact('entries', 'days', 'classes');
     }
@@ -51,10 +53,10 @@ new #[Layout('layouts.monitor')] class extends Component {
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="font-semibold text-sm text-amber-900">{{ $entry->subject?->name }}</p>
-                    <p class="text-xs text-amber-600">{{ $entry->schoolClass?->name }} · {{ $entry->teacher?->full_name }}</p>
+                    <p class="text-xs text-amber-600">{{ $entry->template?->schoolClass?->name }} · {{ $entry->teacher?->full_name }}</p>
                 </div>
-                @if($entry->room)
-                <x-badge :value="$entry->room->name" class="badge-warning badge-sm" />
+                @if($entry->display_room)
+                <x-badge :value="$entry->display_room" class="badge-warning badge-sm" />
                 @endif
             </div>
             @endforeach

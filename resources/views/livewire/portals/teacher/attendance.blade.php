@@ -32,7 +32,7 @@ new #[Layout('layouts.teacher')] class extends Component {
         if (!$this->selectedClassId) return;
 
         $session = AttendanceSession::where('school_class_id', $this->selectedClassId)
-            ->whereDate('date', $this->selectedDate)
+            ->whereDate('session_date', $this->selectedDate)
             ->with('entries')
             ->first();
 
@@ -65,7 +65,7 @@ new #[Layout('layouts.teacher')] class extends Component {
         $teacher = Teacher::where('user_id', auth()->id())->first();
 
         $session = AttendanceSession::firstOrCreate(
-            ['school_class_id' => $this->selectedClassId, 'date' => $this->selectedDate],
+            ['school_class_id' => $this->selectedClassId, 'session_date' => $this->selectedDate],
             ['teacher_id' => $teacher?->id, 'school_id' => auth()->user()->school_id]
         );
 

@@ -15,10 +15,10 @@ new #[Layout('layouts.monitor')] class extends Component {
         $schoolId = auth()->user()->school_id;
 
         // Today stats
-        $todaySessions    = AttendanceSession::where('school_id', $schoolId)->whereDate('date', today())->count();
-        $todayAbsent      = AttendanceEntry::whereHas('session', fn($q) => $q->where('school_id', $schoolId)->whereDate('date', today()))
+        $todaySessions    = AttendanceSession::where('school_id', $schoolId)->whereDate('session_date', today())->count();
+        $todayAbsent      = AttendanceEntry::whereHas('session', fn($q) => $q->where('school_id', $schoolId)->whereDate('session_date', today()))
             ->where('status', 'absent')->count();
-        $todayLate        = AttendanceEntry::whereHas('session', fn($q) => $q->where('school_id', $schoolId)->whereDate('date', today()))
+        $todayLate        = AttendanceEntry::whereHas('session', fn($q) => $q->where('school_id', $schoolId)->whereDate('session_date', today()))
             ->where('status', 'late')->count();
         $totalClasses     = SchoolClass::where('school_id', $schoolId)->where('is_active', true)->count();
 
@@ -140,7 +140,7 @@ new #[Layout('layouts.monitor')] class extends Component {
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium truncate">{{ $entry->student?->full_name }}</p>
-                    <p class="text-xs text-base-content/50">{{ $entry->session?->schoolClass?->name }} · {{ $entry->session?->date?->format('d/m') }}</p>
+                    <p class="text-xs text-base-content/50">{{ $entry->session?->schoolClass?->name }} · {{ $entry->session?->session_date?->format('d/m') }}</p>
                 </div>
                 <x-badge value="Absent" class="badge-error badge-sm" />
             </div>

@@ -86,7 +86,7 @@ new #[Layout('layouts.platform')] class extends Component {
         <x-form wire:submit="saveGeneral">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-input wire:model="appName" label="Nom de l'application" placeholder="ScolApp SMS" class="md:col-span-2" />
-                <x-input wire:model="supportEmail" label="Email de support" type="email" placeholder="support@scolapp.dj" />
+                <x-input wire:model="supportEmail" label="Email de support" type="email" placeholder="support@scolapp.com" />
                 <x-select wire:model="defaultLocale" label="Langue par défaut" :options="$localeOptions" />
                 <x-input wire:model="trialDays" label="Durée d'essai par défaut (jours)" type="number" min="1" max="90" />
             </div>
@@ -102,9 +102,9 @@ new #[Layout('layouts.platform')] class extends Component {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <x-input wire:model="smtpHost" label="Serveur SMTP" placeholder="smtp.mailgun.org" />
                 <x-input wire:model="smtpPort" label="Port" type="number" placeholder="587" />
-                <x-input wire:model="smtpUser" label="Utilisateur SMTP" placeholder="postmaster@scolapp.dj" />
+                <x-input wire:model="smtpUser" label="Utilisateur SMTP" placeholder="postmaster@scolapp.com" />
                 <x-input wire:model="fromName" label="Nom expéditeur" placeholder="ScolApp SMS" />
-                <x-input wire:model="fromEmail" label="Email expéditeur" type="email" placeholder="noreply@scolapp.dj" class="md:col-span-2" />
+                <x-input wire:model="fromEmail" label="Email expéditeur" type="email" placeholder="noreply@scolapp.com" class="md:col-span-2" />
             </div>
             <x-slot:actions>
                 <x-button label="Tester l'email" icon="o-paper-airplane" wire:click="sendTestEmail" class="btn-ghost btn-sm" />

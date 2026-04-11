@@ -4,7 +4,7 @@ use Livewire\Attributes\Layout;
 use Mary\Traits\Toast;
 use App\Models\Teacher;
 use App\Models\SchoolClass;
-use App\Models\Attendance;
+use App\Models\AttendanceSession;
 use App\Models\Assessment;
 use Carbon\Carbon;
 
@@ -21,7 +21,7 @@ new #[Layout('layouts.teacher')] class extends Component {
 
         // Today's attendance sessions by this teacher
         $todayAttendance = $teacher
-            ? Attendance::whereHas('session', fn($q) => $q->where('teacher_id', $teacher->id)->whereDate('date', today()))
+            ? AttendanceSession::where('teacher_id', $teacher->id)->whereDate('session_date', today())
                 ->count()
             : 0;
 
