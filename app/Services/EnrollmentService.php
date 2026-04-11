@@ -68,7 +68,7 @@ class EnrollmentService
         return $enrollment;
     }
 
-    private function sendInvoiceEmails(Enrollment $enrollment, array $tuitionInvoices): void
+    public function sendInvoiceEmails(Enrollment $enrollment, array $tuitionInvoices): void
     {
         // Explicitly reload student with all guardians and their users
         $student = $enrollment->student()->with('guardians.user')->firstOrFail();

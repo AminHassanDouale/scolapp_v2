@@ -14,6 +14,7 @@ use App\Enums\InvoiceType;
 use App\Enums\InvoiceStatus;
 use App\Actions\CreateEnrollmentAction;
 use App\Actions\ConfirmEnrollmentAction;
+use App\Services\EnrollmentService;
 use App\Mail\GuardianWelcomeMail;
 use Carbon\Carbon;
 use Livewire\Volt\Component;
@@ -139,6 +140,21 @@ new #[Layout('layouts.app')] class extends Component {
                 app(ConfirmEnrollmentAction::class)($enrollment);
             }
 
+            // Send invoice emails to guardians (tuition invoices only; service also fetches registration from DB)
+            if (! empty($generatedInvoices)) {
+                try {
+                    $tuitionInvoices = array_values(array_filter(
+                        $generatedInvoices,
+                        fn($inv) => $inv->invoice_type !== \App\Enums\InvoiceType::REGISTRATION
+                    ));
+                    app(EnrollmentService::class)->sendInvoiceEmails($enrollment, $tuitionInvoices);
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error('Invoice email dispatch failed: ' . $e->getMessage(), [
+                        'enrollment_id' => $enrollment->id,
+                    ]);
+                }
+            }
+
             // ── Create guardian login account (first enrollment only) ─────────
             $primaryGuardian = $student->guardians()
                 ->wherePivot('is_primary', true)->first()
@@ -172,8 +188,6 @@ new #[Layout('layouts.app')] class extends Component {
                 }
             }
 
-            // Invoice emails are sent via EnrollmentService::confirm() after confirmation
-            // Nothing to send here at enrollment creation time
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Enrollment post-save error: ' . $e->getMessage(), [
                 'enrollment_id' => $enrollment->id,
