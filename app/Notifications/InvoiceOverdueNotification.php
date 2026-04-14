@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Invoice;
+use App\Channels\WhatsAppChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -15,7 +16,11 @@ class InvoiceOverdueNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        $channels = ['mail', 'database'];
+        if (! empty($notifiable->whatsapp_number) || ! empty($notifiable->phone)) {
+            $channels[] = WhatsAppChannel::class;
+        }
+        return $channels;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -35,6 +40,24 @@ class InvoiceOverdueNotification extends Notification
             ->action(__('notifications.invoice_overdue.cta'), url('/'))
             ->line(__('notifications.invoice_overdue.footer'))
             ->salutation('Cordialement, ' . ($school?->name ?? config('app.name')));
+    }
+
+    public function toWhatsapp(object $notifiable): string
+    {
+        $school    = $this->invoice->school;
+        $currency  = $school?->currency ?? 'DJF';
+
+        return implode("\n", [
+            '⚠️ *Facture en retard*',
+            'Élève : ' . $this->invoice->student->full_name,
+            'Référence : ' . $this->invoice->reference,
+            'Montant dû : ' . number_format($this->invoice->balance_due, 0, ',', ' ') . ' ' . $currency,
+            'Échéance : ' . $this->invoice->due_date->format('d/m/Y'),
+            '',
+            'Merci de régulariser votre situation au plus tôt.',
+            '',
+            '_' . ($school?->name ?? config('app.name')) . '_',
+        ]);
     }
 
     public function toArray(object $notifiable): array

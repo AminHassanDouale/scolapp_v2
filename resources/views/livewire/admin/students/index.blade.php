@@ -142,6 +142,14 @@ new #[Layout('layouts.app')] class extends Component {
                 responsive
             />
             <x-button
+                label="Élève + Responsable"
+                icon="o-user-plus"
+                :link="route('admin.students.create-with-guardian')"
+                wire:navigate
+                class="btn-outline btn-primary"
+                responsive
+            />
+            <x-button
                 :label="__('students.new')"
                 icon="o-plus"
                 :link="route('admin.students.create')"

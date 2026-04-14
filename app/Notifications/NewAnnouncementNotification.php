@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Announcement;
+use App\Channels\WhatsAppChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -15,7 +16,11 @@ class NewAnnouncementNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        $channels = ['mail', 'database'];
+        if (! empty($notifiable->whatsapp_number) || ! empty($notifiable->phone)) {
+            $channels[] = WhatsAppChannel::class;
+        }
+        return $channels;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -28,6 +33,22 @@ class NewAnnouncementNotification extends Notification
             ->line($this->announcement->body)
             ->action(__('notifications.announcement.view'), url('/'))
             ->salutation('Cordialement, ' . $school->name);
+    }
+
+    public function toWhatsapp(object $notifiable): string
+    {
+        $school  = $this->announcement->school;
+        $excerpt = mb_strlen($this->announcement->body) > 300
+            ? mb_substr($this->announcement->body, 0, 297) . '...'
+            : $this->announcement->body;
+
+        return implode("\n", [
+            '📢 *Annonce : ' . $this->announcement->title . '*',
+            '',
+            $excerpt,
+            '',
+            '_' . ($school?->name ?? config('app.name')) . '_',
+        ]);
     }
 
     public function toArray(object $notifiable): array

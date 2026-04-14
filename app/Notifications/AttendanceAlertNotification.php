@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Student;
+use App\Channels\WhatsAppChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -19,7 +20,11 @@ class AttendanceAlertNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        $channels = ['mail', 'database'];
+        if (! empty($notifiable->whatsapp_number) || ! empty($notifiable->phone)) {
+            $channels[] = WhatsAppChannel::class;
+        }
+        return $channels;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -37,6 +42,23 @@ class AttendanceAlertNotification extends Notification
             ]))
             ->action(__('notifications.attendance_alert.cta'), url('/'))
             ->salutation('Cordialement, ' . ($school?->name ?? config('app.name')));
+    }
+
+    public function toWhatsapp(object $notifiable): string
+    {
+        $school    = $this->student->school;
+        $typeLabel = $this->alertType === 'repeated_absence' ? 'Absence répétée' : 'Retard fréquent';
+
+        return implode("\n", [
+            '🚨 *Alerte présence*',
+            'Élève : ' . $this->student->full_name,
+            'Type : ' . $typeLabel,
+            'Occurrences : ' . $this->count,
+            '',
+            'Veuillez contacter l\'établissement pour plus d\'informations.',
+            '',
+            '_' . ($school?->name ?? config('app.name')) . '_',
+        ]);
     }
 
     public function toArray(object $notifiable): array

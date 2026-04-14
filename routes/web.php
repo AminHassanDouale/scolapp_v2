@@ -139,6 +139,7 @@ Route::middleware(['auth', 'role:super-admin|admin|director|accountant', 'school
             ->group(function () {
                 Volt::route('/',                'admin.students.index')->name('index');
                 Volt::route('/nouveau',         'admin.students.create')->middleware('can:students.create')->name('create');
+                Volt::route('/nouveau-complet', 'admin.students.create-with-guardian')->middleware('can:students.create')->name('create-with-guardian');
                 Volt::route('/{uuid}/modifier', 'admin.students.edit')->middleware('can:students.edit')->name('edit');
                 Volt::route('/{uuid}',          'admin.students.show')->name('show');
             });
