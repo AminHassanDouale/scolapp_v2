@@ -67,6 +67,10 @@ class InvoiceGeneratedNotification extends Notification
         $filename = 'facture-' . $invoice->reference . '.pdf';
         $caption  = 'Facture ' . $invoice->reference . ' — ' . ($invoice->school?->name ?? '');
 
-        return [$base64, $filename, $caption];
+        return [
+            'url'      => $base64,
+            'filename' => $filename,
+            'caption'  => $caption,
+        ];
     }
 }

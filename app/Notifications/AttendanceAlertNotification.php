@@ -21,7 +21,10 @@ class AttendanceAlertNotification extends Notification
     public function via(object $notifiable): array
     {
         $channels = ['mail', 'database'];
-        if (! empty($notifiable->whatsapp_number) || ! empty($notifiable->phone)) {
+        $phone = method_exists($notifiable, 'routeNotificationForWhatsApp')
+            ? $notifiable->routeNotificationForWhatsApp()
+            : ($notifiable->whatsapp_number ?? $notifiable->phone ?? null);
+        if (filled($phone)) {
             $channels[] = WhatsAppChannel::class;
         }
         return $channels;

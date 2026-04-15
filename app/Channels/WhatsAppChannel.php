@@ -11,8 +11,11 @@ class WhatsAppChannel
 
     public function send(mixed $notifiable, Notification $notification): void
     {
-        // Use whatsapp_number if set, otherwise fall back to phone
-        $phone = $notifiable->whatsapp_number ?? $notifiable->phone ?? null;
+        // Prefer routeNotificationForWhatsApp() (supports User→Guardian bridge),
+        // fall back to direct property access for simpler models.
+        $phone = method_exists($notifiable, 'routeNotificationForWhatsApp')
+            ? $notifiable->routeNotificationForWhatsApp()
+            : ($notifiable->whatsapp_number ?? $notifiable->phone ?? null);
 
         if (! $phone) {
             return;

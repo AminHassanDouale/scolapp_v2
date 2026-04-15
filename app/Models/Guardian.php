@@ -12,11 +12,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 
 class Guardian extends Model
 {
-    use BelongsToSchool, HasAttachments, HasFactory, HasUuid, SoftDeletes;
+    use BelongsToSchool, HasAttachments, HasFactory, HasUuid, Notifiable, SoftDeletes;
+
+    /**
+     * Route WhatsApp notifications — prefer whatsapp_number, fall back to phone.
+     */
+    public function routeNotificationForWhatsApp(): ?string
+    {
+        return filled($this->whatsapp_number) ? $this->whatsapp_number
+             : (filled($this->phone)          ? $this->phone
+             : null);
+    }
 
     protected $fillable = [
         'uuid',

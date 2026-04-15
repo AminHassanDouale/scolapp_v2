@@ -131,6 +131,21 @@ class User extends Authenticatable
         ]);
     }
 
+    /**
+     * Route WhatsApp notifications.
+     * Checks own whatsapp_number / phone first, then bridges to the associated
+     * Guardian record (for guardian portal accounts whose phone lives on Guardian).
+     */
+    public function routeNotificationForWhatsApp(): ?string
+    {
+        if (filled($this->whatsapp_number)) return $this->whatsapp_number;
+        if (filled($this->phone))           return $this->phone;
+
+        // Guardian portal accounts: phone is stored on the Guardian model
+        $guardian = \App\Models\Guardian::where('user_id', $this->id)->first();
+        return $guardian?->whatsapp_number ?? $guardian?->phone ?? null;
+    }
+
     // ── Relationships ─────────────────────────────────────────────────────────
 
     public function school(): BelongsTo
