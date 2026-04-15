@@ -101,11 +101,31 @@ class WhatsAppService
         try {
             $params['token'] = config('services.ultramsg.token');
 
-            $this->http->post($endpoint, ['form_params' => $params]);
+            $response = $this->http->post($endpoint, ['form_params' => $params]);
+            $body     = (string) $response->getBody();
+            $decoded  = json_decode($body, true);
+
+            // UltraMsg returns {"sent":"true"} on success, or {"error":"..."} on failure
+            $sent = $decoded['sent'] ?? $decoded['status'] ?? null;
+            if ($sent !== null && $sent !== 'true' && $sent !== true && $sent !== 1) {
+                Log::warning('WhatsAppService: message not sent', [
+                    'endpoint' => $endpoint,
+                    'phone'    => $params['to'] ?? '?',
+                    'response' => $body,
+                ]);
+                return false;
+            }
+
+            Log::info('WhatsAppService: sent', [
+                'endpoint' => $endpoint,
+                'phone'    => $params['to'] ?? '?',
+                'response' => $body,
+            ]);
             return true;
         } catch (\Throwable $e) {
             Log::error('WhatsAppService error', [
                 'endpoint' => $endpoint,
+                'phone'    => $params['to'] ?? '?',
                 'error'    => $e->getMessage(),
             ]);
             return false;

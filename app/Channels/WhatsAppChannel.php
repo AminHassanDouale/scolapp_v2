@@ -33,13 +33,20 @@ class WhatsAppChannel
 
         if (method_exists($notification, 'toWhatsappDocument')) {
             sleep(1);
-            $doc = $notification->toWhatsappDocument($notifiable);
-            $this->whatsapp->sendDocument(
-                $phone,
-                $doc['url'],
-                $doc['filename'] ?? 'document.pdf',
-                $doc['caption']  ?? ''
-            );
+            try {
+                $doc = $notification->toWhatsappDocument($notifiable);
+                $this->whatsapp->sendDocument(
+                    $phone,
+                    $doc['url'],
+                    $doc['filename'] ?? 'document.pdf',
+                    $doc['caption']  ?? ''
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('WhatsAppChannel: document send failed', [
+                    'phone' => $phone,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 }

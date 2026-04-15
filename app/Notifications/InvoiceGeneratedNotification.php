@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Storage;
 
 class InvoiceGeneratedNotification extends Notification
 {
@@ -60,17 +61,17 @@ class InvoiceGeneratedNotification extends Notification
     {
         $invoice = $this->invoice->load('student', 'school', 'academicYear', 'enrollment.schoolClass.grade', 'paymentAllocations.payment');
 
-        $pdf = Pdf::loadView('pdf.invoice', compact('invoice'))
-            ->setPaper('a4', 'portrait');
-
-        $base64 = 'data:application/pdf;base64,' . base64_encode($pdf->output());
+        $pdf      = Pdf::loadView('pdf.invoice', compact('invoice'))->setPaper('a4', 'portrait');
         $filename = 'facture-' . $invoice->reference . '.pdf';
-        $caption  = 'Facture ' . $invoice->reference . ' — ' . ($invoice->school?->name ?? '');
+        $tempPath = 'temp-invoices/' . $filename;
+
+        Storage::disk('public')->put($tempPath, $pdf->output());
+        $url = Storage::disk('public')->url($tempPath);
 
         return [
-            'url'      => $base64,
+            'url'      => $url,
             'filename' => $filename,
-            'caption'  => $caption,
+            'caption'  => 'Facture ' . $invoice->reference . ' — ' . ($invoice->school?->name ?? ''),
         ];
     }
 }
