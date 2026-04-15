@@ -64,56 +64,10 @@ class EnrollmentService
             return $enrollment;
         });
 
-        // Send welcome WhatsApp then all invoices after the transaction commits
-        $this->sendEnrollmentWelcome($enrollment);
+        // Send all invoices after the transaction commits
         $this->sendInvoiceEmails($enrollment, $tuitionInvoices);
 
         return $enrollment;
-    }
-
-    /**
-     * Send a one-time WhatsApp welcome message to every guardian with a phone number.
-     */
-    public function sendEnrollmentWelcome(Enrollment $enrollment): void
-    {
-        $whatsapp    = app(WhatsAppService::class);
-        $enrollment->loadMissing('schoolClass', 'academicYear', 'school');
-        $student  = $enrollment->student()->with('guardians')->firstOrFail();
-        $school   = $enrollment->school ?? $student->school;
-
-        $student->guardians
-            ->filter(fn($g) => filled($g->whatsapp_number) || filled($g->phone))
-            ->each(function ($guardian) use ($whatsapp, $enrollment, $student, $school) {
-                $phone = $guardian->whatsapp_number ?? $guardian->phone;
-
-                $message = implode("\n", [
-                    '🎓 *Inscription confirmée — ' . ($school?->name ?? config('app.name')) . '*',
-                    '',
-                    'Bonjour ' . $guardian->name . ',',
-                    '',
-                    'L\'inscription de *' . $student->full_name . '* a été confirmée avec succès.',
-                    'Classe : ' . ($enrollment->schoolClass?->name ?? '—'),
-                    'Année  : ' . ($enrollment->academicYear?->name ?? '—'),
-                    '',
-                    'Vous recevrez les factures en pièce jointe dans les messages suivants.',
-                    '',
-                    '_' . ($school?->name ?? config('app.name')) . '_',
-                ]);
-
-                try {
-                    $whatsapp->sendMessage($phone, $message);
-                    Log::info('sendEnrollmentWelcome: sent', [
-                        'guardian_id'   => $guardian->id,
-                        'phone'         => $phone,
-                        'enrollment_id' => $enrollment->id,
-                    ]);
-                } catch (\Throwable $e) {
-                    Log::error('sendEnrollmentWelcome: failed', [
-                        'guardian_id' => $guardian->id,
-                        'error'       => $e->getMessage(),
-                    ]);
-                }
-            });
     }
 
     public function sendInvoiceEmails(Enrollment $enrollment, array $tuitionInvoices): void
