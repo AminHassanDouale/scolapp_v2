@@ -64,10 +64,56 @@ class EnrollmentService
             return $enrollment;
         });
 
-        // Send all invoices by email after the transaction commits
+        // Send welcome WhatsApp then all invoices after the transaction commits
+        $this->sendEnrollmentWelcome($enrollment);
         $this->sendInvoiceEmails($enrollment, $tuitionInvoices);
 
         return $enrollment;
+    }
+
+    /**
+     * Send a one-time WhatsApp welcome message to every guardian with a phone number.
+     */
+    public function sendEnrollmentWelcome(Enrollment $enrollment): void
+    {
+        $whatsapp    = app(WhatsAppService::class);
+        $enrollment->loadMissing('schoolClass', 'academicYear', 'school');
+        $student  = $enrollment->student()->with('guardians')->firstOrFail();
+        $school   = $enrollment->school ?? $student->school;
+
+        $student->guardians
+            ->filter(fn($g) => filled($g->whatsapp_number) || filled($g->phone))
+            ->each(function ($guardian) use ($whatsapp, $enrollment, $student, $school) {
+                $phone = $guardian->whatsapp_number ?? $guardian->phone;
+
+                $message = implode("\n", [
+                    '🎓 *Inscription confirmée — ' . ($school?->name ?? config('app.name')) . '*',
+                    '',
+                    'Bonjour ' . $guardian->name . ',',
+                    '',
+                    'L\'inscription de *' . $student->full_name . '* a été confirmée avec succès.',
+                    'Classe : ' . ($enrollment->schoolClass?->name ?? '—'),
+                    'Année  : ' . ($enrollment->academicYear?->name ?? '—'),
+                    '',
+                    'Vous recevrez les factures en pièce jointe dans les messages suivants.',
+                    '',
+                    '_' . ($school?->name ?? config('app.name')) . '_',
+                ]);
+
+                try {
+                    $whatsapp->sendMessage($phone, $message);
+                    Log::info('sendEnrollmentWelcome: sent', [
+                        'guardian_id'   => $guardian->id,
+                        'phone'         => $phone,
+                        'enrollment_id' => $enrollment->id,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::error('sendEnrollmentWelcome: failed', [
+                        'guardian_id' => $guardian->id,
+                        'error'       => $e->getMessage(),
+                    ]);
+                }
+            });
     }
 
     public function sendInvoiceEmails(Enrollment $enrollment, array $tuitionInvoices): void
@@ -82,18 +128,17 @@ class EnrollmentService
             'tuition_count'  => count($tuitionInvoices),
         ]);
 
-        // Get all guardians who have any email — no pivot filter
-        $guardians = $student->guardians->filter(
-            fn($g) => filled($g->email) || filled($g->user?->email)
-        );
+        // All guardians — email sent to those with email, WhatsApp to those with phone
+        $guardians = $student->guardians;
 
-        Log::info('sendInvoiceEmails: guardians with email', [
-            'count' => $guardians->count(),
-            'emails' => $guardians->map(fn($g) => $g->email ?? $g->user?->email)->all(),
+        Log::info('sendInvoiceEmails: guardians loaded', [
+            'count'  => $guardians->count(),
+            'emails' => $guardians->map(fn($g) => $g->email ?? $g->user?->email)->filter()->all(),
+            'phones' => $guardians->map(fn($g) => $g->whatsapp_number ?? $g->phone)->filter()->all(),
         ]);
 
         if ($guardians->isEmpty()) {
-            Log::warning('sendInvoiceEmails: no guardian with email found', [
+            Log::warning('sendInvoiceEmails: no guardian found', [
                 'enrollment_id' => $enrollment->id,
                 'student_id'    => $student->id,
             ]);
@@ -117,29 +162,34 @@ class EnrollmentService
         ]);
 
         foreach ($guardians as $guardian) {
+            $email = $guardian->email ?? $guardian->user?->email ?? null;
+            $phone = $guardian->whatsapp_number ?? $guardian->phone ?? null;
+
             foreach ($invoices as $invoice) {
                 // ── Email ──────────────────────────────────────────────────────
-                try {
-                    Mail::queue(new InvoiceGeneratedMail($invoice, $guardian));
-                    Log::info('sendInvoiceEmails: email queued', [
-                        'invoice_ref' => $invoice->reference,
-                        'email'       => $guardian->email ?? $guardian->user?->email,
-                    ]);
-                } catch (\Throwable $e) {
-                    Log::error('sendInvoiceEmails: email queue failed', [
-                        'invoice_id'  => $invoice->id,
-                        'guardian_id' => $guardian->id,
-                        'error'       => $e->getMessage(),
-                    ]);
+                if (filled($email)) {
+                    try {
+                        Mail::queue(new InvoiceGeneratedMail($invoice, $guardian));
+                        Log::info('sendInvoiceEmails: email queued', [
+                            'invoice_ref' => $invoice->reference,
+                            'email'       => $email,
+                        ]);
+                    } catch (\Throwable $e) {
+                        Log::error('sendInvoiceEmails: email queue failed', [
+                            'invoice_id'  => $invoice->id,
+                            'guardian_id' => $guardian->id,
+                            'error'       => $e->getMessage(),
+                        ]);
+                    }
                 }
 
                 // ── WhatsApp (text + PDF attachment) ───────────────────────────
-                if (filled($guardian->whatsapp_number) || filled($guardian->phone)) {
+                if (filled($phone)) {
                     try {
                         Notification::send($guardian, new InvoiceGeneratedNotification($invoice, $guardian));
                         Log::info('sendInvoiceEmails: WhatsApp queued', [
                             'invoice_ref' => $invoice->reference,
-                            'phone'       => $guardian->whatsapp_number ?? $guardian->phone,
+                            'phone'       => $phone,
                         ]);
                     } catch (\Throwable $e) {
                         Log::error('sendInvoiceEmails: WhatsApp failed', [
