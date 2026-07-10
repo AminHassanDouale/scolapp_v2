@@ -17,7 +17,7 @@ new #[Layout('layouts.student')] class extends Component {
             ->with(['enrollments.schoolClass', 'enrollments.grade'])
             ->first();
 
-        $enrollment = $student?->enrollments?->where('status', 'active')->first();
+        $enrollment = $student?->enrollments?->firstWhere('status', \App\Enums\EnrollmentStatus::CONFIRMED);
 
         $absences = $student
             ? AttendanceEntry::where('student_id', $student->id)->where('status', 'absent')->count()

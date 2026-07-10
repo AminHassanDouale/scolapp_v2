@@ -12,7 +12,7 @@ new #[Layout('layouts.student')] class extends Component {
     {
         $student    = Student::where('user_id', auth()->id())->first();
         $enrollment = $student?->enrollments()
-            ->where('status', 'active')
+            ->where('status', 'confirmed')
             ->with('schoolClass')
             ->first();
 

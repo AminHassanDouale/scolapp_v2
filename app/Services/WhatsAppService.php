@@ -5,18 +5,37 @@ namespace App\Services;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * WhatsApp transport backed by the OpenWA gateway (taxiconnect.online).
+ *
+ * Every messaging endpoint is scoped to a session:
+ *   POST {base}/sessions/{sessionId}/messages/send-text|send-image|send-document
+ * Auth is the `X-API-Key` header. A recipient is a chatId: `<digits>@c.us`.
+ *
+ * Public method signatures are kept identical to the previous provider so that
+ * WhatsAppChannel and every caller keep working unchanged.
+ *
+ * @see docs — OpenWA WhatsApp Notification Integration Guide
+ */
 class WhatsAppService
 {
     private Client $http;
+    private string $sessionId;
 
     public function __construct()
     {
-        $instanceId = config('services.ultramsg.instance_id');
+        $baseUri = rtrim((string) config('services.openwa.base_url', 'https://taxiconnect.online/api'), '/') . '/';
+        $this->sessionId = (string) config('services.openwa.session_id', '');
 
         $this->http = new Client([
-            'base_uri' => "https://api.ultramsg.com/{$instanceId}/",
-            'timeout'  => 30,
-            'headers'  => ['Content-Type' => 'application/x-www-form-urlencoded'],
+            'base_uri'    => $baseUri,
+            'timeout'     => 30,
+            'http_errors' => false, // inspect status/body ourselves
+            'headers'     => [
+                'X-API-Key'    => (string) config('services.openwa.api_key', ''),
+                'Content-Type' => 'application/json',
+                'Accept'       => 'application/json',
+            ],
         ]);
     }
 
@@ -25,9 +44,9 @@ class WhatsAppService
      */
     public function sendMessage(string $phone, string $message): bool
     {
-        return $this->post('messages/chat', [
-            'to'   => $this->normalizePhone($phone),
-            'body' => $message,
+        return $this->post('messages/send-text', [
+            'chatId' => $this->chatId($phone),
+            'text'   => $message,
         ]);
     }
 
@@ -39,9 +58,9 @@ class WhatsAppService
         string $imageUrl,
         string $caption = ''
     ): bool {
-        return $this->post('messages/image', [
-            'to'      => $this->normalizePhone($phone),
-            'image'   => $imageUrl,
+        return $this->post('messages/send-image', [
+            'chatId'  => $this->chatId($phone),
+            'url'     => $imageUrl,
             'caption' => $caption,
         ]);
     }
@@ -55,9 +74,9 @@ class WhatsAppService
         string $filename = 'document.pdf',
         string $caption  = ''
     ): bool {
-        return $this->post('messages/document', [
-            'to'       => $this->normalizePhone($phone),
-            'document' => $documentUrl,
+        return $this->post('messages/send-document', [
+            'chatId'   => $this->chatId($phone),
+            'url'      => $documentUrl,
             'filename' => $filename,
             'caption'  => $caption,
         ]);
@@ -96,36 +115,42 @@ class WhatsAppService
 
     // ── Internals ──────────────────────────────────────────────────────────────
 
-    private function post(string $endpoint, array $params): bool
+    /**
+     * @param  array<string, mixed> $payload
+     */
+    private function post(string $endpoint, array $payload): bool
     {
+        if (blank($this->sessionId) || blank(config('services.openwa.api_key'))) {
+            Log::warning('WhatsAppService: OpenWA not configured (set OPENWA_API_KEY and OPENWA_SESSION_ID).');
+            return false;
+        }
+
         try {
-            $params['token'] = config('services.ultramsg.token');
-
-            $response = $this->http->post($endpoint, ['form_params' => $params]);
+            $url      = "sessions/{$this->sessionId}/{$endpoint}";
+            $response = $this->http->post($url, ['json' => $payload]);
+            $status   = $response->getStatusCode();
             $body     = (string) $response->getBody();
-            $decoded  = json_decode($body, true);
 
-            // UltraMsg returns {"sent":"true"} on success, or {"error":"..."} on failure
-            $sent = $decoded['sent'] ?? $decoded['status'] ?? null;
-            if ($sent !== null && $sent !== 'true' && $sent !== true && $sent !== 1) {
-                Log::warning('WhatsAppService: message not sent', [
+            if ($status >= 200 && $status < 300) {
+                Log::info('WhatsAppService: sent', [
                     'endpoint' => $endpoint,
-                    'phone'    => $params['to'] ?? '?',
+                    'chatId'   => $payload['chatId'] ?? '?',
                     'response' => $body,
                 ]);
-                return false;
+                return true;
             }
 
-            Log::info('WhatsAppService: sent', [
+            Log::warning('WhatsAppService: message not sent', [
                 'endpoint' => $endpoint,
-                'phone'    => $params['to'] ?? '?',
+                'chatId'   => $payload['chatId'] ?? '?',
+                'status'   => $status,
                 'response' => $body,
             ]);
-            return true;
+            return false;
         } catch (\Throwable $e) {
             Log::error('WhatsAppService error', [
                 'endpoint' => $endpoint,
-                'phone'    => $params['to'] ?? '?',
+                'chatId'   => $payload['chatId'] ?? '?',
                 'error'    => $e->getMessage(),
             ]);
             return false;
@@ -133,10 +158,17 @@ class WhatsAppService
     }
 
     /**
-     * Ensure phone starts with country code (no + prefix for UltraMsg).
+     * Turn a phone number into an OpenWA chatId: `<digits>@c.us`.
+     * Passes through values that are already a chatId (contain `@`).
      */
-    private function normalizePhone(string $phone): string
+    private function chatId(string $phone): string
     {
-        return ltrim(preg_replace('/\s+/', '', $phone), '+');
+        if (str_contains($phone, '@')) {
+            return $phone;
+        }
+
+        $digits = preg_replace('/\D+/', '', $phone) ?? '';
+
+        return $digits . '@c.us';
     }
 }

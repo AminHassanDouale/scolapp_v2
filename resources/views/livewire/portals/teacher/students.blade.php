@@ -20,7 +20,7 @@ new #[Layout('layouts.teacher')] class extends Component {
             ? [$this->selectedClassId]
             : $classes->pluck('id')->all();
 
-        $students = Student::whereHas('enrollments', fn($q) => $q->whereIn('school_class_id', $classIds)->where('status', 'active'))
+        $students = Student::whereHas('enrollments', fn($q) => $q->whereIn('school_class_id', $classIds)->where('status', 'confirmed'))
             ->when($this->search, fn($q) => $q->where(function($q) {
                 $q->where('name', 'like', "%{$this->search}%")
                   ->orWhere('reference', 'like', "%{$this->search}%");

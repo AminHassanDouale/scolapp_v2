@@ -33,6 +33,13 @@ return [
         'token'       => env('ULTRAMSG_TOKEN'),
     ],
 
+    // WhatsApp gateway (OpenWA — taxiconnect.online). Server-side only.
+    'openwa' => [
+        'base_url'   => env('OPENWA_BASE_URL', 'https://taxiconnect.online/api'),
+        'api_key'    => env('OPENWA_API_KEY'),
+        'session_id' => env('OPENWA_SESSION_ID'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

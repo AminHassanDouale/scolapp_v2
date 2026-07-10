@@ -4,9 +4,11 @@ namespace App\Notifications;
 
 use App\Models\Guardian;
 use App\Models\Payment;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentConfirmedNotification extends Notification implements ShouldQueue
 {
@@ -73,5 +75,32 @@ class PaymentConfirmedNotification extends Notification implements ShouldQueue
         $lines[] = "Merci pour votre confiance. 🙏";
 
         return implode("\n", $lines);
+    }
+
+    // ── WhatsApp receipt PDF ───────────────────────────────────────────────────
+
+    /**
+     * Payment receipt attached to the WhatsApp message.
+     * Returns [url, filename, caption]; the gateway fetches the public URL.
+     */
+    public function toWhatsappDocument(object $notifiable): array
+    {
+        $payment  = $this->payment->loadMissing('school', 'student', 'paymentAllocations.invoice');
+        $school   = $payment->school;
+        $guardian = $this->guardian;
+
+        $pdf      = Pdf::loadView('exports.payments.receipt-pdf', compact('payment', 'school', 'guardian'))
+            ->setPaper('a4', 'portrait');
+        $filename = 'recu-' . $payment->reference . '.pdf';
+        $tempPath = 'temp-receipts/' . $filename;
+
+        Storage::disk('public')->put($tempPath, $pdf->output());
+        $url = Storage::disk('public')->url($tempPath);
+
+        return [
+            'url'      => $url,
+            'filename' => $filename,
+            'caption'  => 'Reçu ' . $payment->reference . ' — ' . ($school?->name ?? config('app.name')),
+        ];
     }
 }

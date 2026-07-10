@@ -72,18 +72,18 @@ new #[Layout('layouts.monitor')] class extends Component {
                     <td>{{ $entry->session?->schoolClass?->name ?? '—' }}</td>
                     <td class="text-sm text-base-content/60">{{ $entry->session?->session_date?->format('d/m/Y') }}</td>
                     <td class="text-center">
-                        @php $badge = match($entry->status) {
+                        @php $status = $entry->status?->value ?? $entry->status; $badge = match($status) {
                             'present' => 'badge-success',
                             'absent'  => 'badge-error',
                             'late'    => 'badge-warning',
                             'excused' => 'badge-info',
                             default   => 'badge-ghost'
-                        }; $label = match($entry->status) {
+                        }; $label = match($status) {
                             'present' => 'Présent',
                             'absent'  => 'Absent',
                             'late'    => 'Retard',
                             'excused' => 'Excusé',
-                            default   => $entry->status
+                            default   => $status
                         }; @endphp
                         <x-badge :value="$label" class="{{ $badge }} badge-sm" />
                     </td>

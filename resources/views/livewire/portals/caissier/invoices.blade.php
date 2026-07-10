@@ -9,14 +9,19 @@ new #[Layout('layouts.caissier')] class extends Component {
     use Toast, WithPagination;
 
     public string $search       = '';
-    public string $filterStatus = 'unpaid';
+    public string $filterStatus = 'outstanding';
 
     public function with(): array
     {
         $schoolId = auth()->user()->school_id;
 
+        // "outstanding" spans several real InvoiceStatus enum values.
+        $outstanding = ['issued', 'partially_paid', 'overdue'];
+
         $invoices = Invoice::where('school_id', $schoolId)
-            ->when($this->filterStatus, fn($q) => $q->where('status', $this->filterStatus))
+            ->when($this->filterStatus === 'outstanding', fn($q) => $q->whereIn('status', $outstanding))
+            ->when($this->filterStatus && $this->filterStatus !== 'outstanding',
+                fn($q) => $q->where('status', $this->filterStatus))
             ->when($this->search, fn($q) => $q->whereHas('enrollment.student', fn($q2) =>
                 $q2->where('name', 'like', "%{$this->search}%")
                    ->orWhere('reference', 'like', "%{$this->search}%")
@@ -44,7 +49,7 @@ new #[Layout('layouts.caissier')] class extends Component {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <x-input wire:model.live.debounce="search" placeholder="Rechercher un élève..." icon="o-magnifying-glass" />
             <x-select wire:model.live="filterStatus" label="Statut"
-                :options="[['id' => '', 'name' => 'Tous'], ['id' => 'unpaid', 'name' => 'Impayées'], ['id' => 'partial', 'name' => 'Partielles'], ['id' => 'paid', 'name' => 'Payées']]" />
+                :options="[['id' => '', 'name' => 'Tous'], ['id' => 'outstanding', 'name' => 'Impayées'], ['id' => 'partially_paid', 'name' => 'Partielles'], ['id' => 'paid', 'name' => 'Payées']]" />
         </div>
     </x-card>
 
@@ -66,9 +71,10 @@ new #[Layout('layouts.caissier')] class extends Component {
                 @forelse($invoices as $invoice)
                 @php
                     $paid = $invoice->payments->sum('amount');
-                    $badge = match($invoice->status) { 'paid' => 'badge-success', 'unpaid' => 'badge-error', 'partial' => 'badge-warning', default => 'badge-ghost' };
-                    $label = match($invoice->status) { 'paid' => 'Payée', 'unpaid' => 'Impayée', 'partial' => 'Partielle', default => $invoice->status };
-                    $overdue = $invoice->status !== 'paid' && $invoice->due_date?->isPast();
+                    $status = $invoice->status?->value ?? $invoice->status;
+                    $badge = match($status) { 'paid' => 'badge-success', 'partially_paid' => 'badge-warning', 'overdue' => 'badge-error', 'issued' => 'badge-info', default => 'badge-ghost' };
+                    $label = match($status) { 'paid' => 'Payée', 'partially_paid' => 'Partielle', 'overdue' => 'En retard', 'issued' => 'Émise', 'draft' => 'Brouillon', 'cancelled' => 'Annulée', default => $status };
+                    $overdue = ! in_array($status, ['paid', 'cancelled']) && $invoice->due_date?->isPast();
                 @endphp
                 <tr class="hover border-b border-base-100 {{ $overdue ? 'bg-red-50/50' : '' }}">
                     <td class="font-medium">{{ $invoice->enrollment?->student?->full_name }}</td>
@@ -82,7 +88,7 @@ new #[Layout('layouts.caissier')] class extends Component {
                     <td class="text-right text-sm text-success">{{ number_format($paid, 0, ',', ' ') }}</td>
                     <td class="text-center"><x-badge :value="$label" class="{{ $badge }} badge-sm" /></td>
                     <td class="text-center">
-                        @if($invoice->status !== 'paid')
+                        @if(! in_array($status, ['paid', 'cancelled']))
                         <a href="{{ route('caissier.payment', ['invoice' => $invoice->uuid]) }}" wire:navigate>
                             <x-button label="Encaisser" class="btn-xs btn-primary" />
                         </a>

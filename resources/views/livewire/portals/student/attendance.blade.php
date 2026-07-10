@@ -77,8 +77,9 @@ new #[Layout('layouts.student')] class extends Component {
                     <td>{{ $entry->session?->session_date?->format('d/m/Y') }}</td>
                     <td>{{ $entry->session?->schoolClass?->name ?? '—' }}</td>
                     <td class="text-center">
-                        @php $badge = match($entry->status) { 'present' => 'badge-success', 'absent' => 'badge-error', 'late' => 'badge-warning', 'excused' => 'badge-info', default => 'badge-ghost' };
-                        $label = match($entry->status) { 'present' => 'Présent', 'absent' => 'Absent', 'late' => 'Retard', 'excused' => 'Excusé', default => $entry->status }; @endphp
+                        @php $status = $entry->status?->value ?? $entry->status;
+                        $badge = match($status) { 'present' => 'badge-success', 'absent' => 'badge-error', 'late' => 'badge-warning', 'excused' => 'badge-info', default => 'badge-ghost' };
+                        $label = match($status) { 'present' => 'Présent', 'absent' => 'Absent', 'late' => 'Retard', 'excused' => 'Excusé', default => $status }; @endphp
                         <x-badge :value="$label" class="{{ $badge }} badge-sm" />
                     </td>
                 </tr>

@@ -16,8 +16,10 @@ new #[Layout('layouts.caissier')] class extends Component {
 
         $todayPayments   = Payment::where('school_id', $schoolId)->whereDate('payment_date', $today)->sum('amount');
         $todayCount      = Payment::where('school_id', $schoolId)->whereDate('payment_date', $today)->count();
-        $pendingInvoices = Invoice::where('school_id', $schoolId)->where('status', 'unpaid')->count();
-        $overdueInvoices = Invoice::where('school_id', $schoolId)->where('status', 'unpaid')->where('due_date', '<', $today)->count();
+        // "Outstanding" = not yet fully settled (see App\Enums\InvoiceStatus)
+        $outstanding     = ['issued', 'partially_paid', 'overdue'];
+        $pendingInvoices = Invoice::where('school_id', $schoolId)->whereIn('status', $outstanding)->count();
+        $overdueInvoices = Invoice::where('school_id', $schoolId)->whereIn('status', $outstanding)->where('due_date', '<', $today)->count();
 
         $recentPayments = Payment::where('school_id', $schoolId)
             ->with(['student', 'enrollment.schoolClass'])

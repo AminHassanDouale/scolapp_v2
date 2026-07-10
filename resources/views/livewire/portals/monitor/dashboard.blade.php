@@ -2,7 +2,6 @@
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use Mary\Traits\Toast;
-use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Models\AttendanceEntry;
 use App\Models\SchoolClass;

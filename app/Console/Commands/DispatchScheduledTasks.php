@@ -18,6 +18,7 @@ use App\Models\Payment;
 use App\Models\ScheduledTask;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\WhatsAppService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
@@ -28,6 +29,60 @@ class DispatchScheduledTasks extends Command
 {
     protected $signature   = 'tasks:dispatch {--school= : Only run for this school_id}';
     protected $description = 'Dispatch all scheduled tasks that are due to run';
+
+    public function __construct(private WhatsAppService $whatsapp)
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Best-effort WhatsApp send to a Guardian/User notifiable.
+     * Never throws — the service logs and returns false on failure.
+     */
+    private function sendWa(mixed $notifiable, string $text): void
+    {
+        $phone = $notifiable->whatsapp_number ?? $notifiable->phone ?? null;
+        if (filled($phone)) {
+            $this->whatsapp->sendMessage($phone, $text);
+        }
+    }
+
+    private static function money(mixed $amount): string
+    {
+        return number_format((float) $amount, 0, ',', ' ');
+    }
+
+    /**
+     * Render an invoice to a public PDF URL the WhatsApp gateway can fetch.
+     * Best-effort — returns null on failure so the text message still sends.
+     */
+    private function invoicePdfUrl(Invoice $invoice): ?string
+    {
+        try {
+            $invoice->loadMissing('student', 'school', 'academicYear', 'enrollment.schoolClass.grade', 'paymentAllocations.payment');
+            $pdf  = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice', compact('invoice'))->setPaper('a4', 'portrait');
+            $path = 'temp-invoices/facture-' . $invoice->reference . '.pdf';
+            \Illuminate\Support\Facades\Storage::disk('public')->put($path, $pdf->output());
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('DispatchScheduledTasks: invoice PDF for WhatsApp failed', [
+                'invoice_id' => $invoice->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Best-effort WhatsApp document send to a Guardian/User notifiable.
+     */
+    private function sendWaDoc(mixed $notifiable, ?string $docUrl, string $filename, string $caption): void
+    {
+        $phone = $notifiable->whatsapp_number ?? $notifiable->phone ?? null;
+        if (filled($phone) && filled($docUrl)) {
+            $this->whatsapp->sendDocument($phone, $docUrl, $filename, $caption);
+        }
+    }
 
     public function handle(): int
     {
@@ -111,17 +166,30 @@ class DispatchScheduledTasks extends Command
         );
 
         foreach ($invoices as $invoice) {
-            foreach ($invoice->student?->guardians?->whereNotNull('email') ?? [] as $guardian) {
-                Mail::send('emails.tasks.invoice-reminder', compact('invoice', 'school', 'guardian'), function ($msg) use ($guardian, $invoice, $task, $excelPath) {
-                    $msg->to($guardian->email)
-                        ->subject($task->meta['custom_subject'] ?? "Rappel de paiement — {$invoice->reference}");
-                    if ($excelPath) {
-                        $msg->attach($excelPath, [
-                            'as'   => 'rappel-paiements-' . now()->format('Ymd') . '.xlsx',
-                            'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                        ]);
-                    }
-                });
+            $waText = "🔔 *Rappel de paiement*\n"
+                . "Élève : " . ($invoice->student?->full_name ?? '—') . "\n"
+                . "Facture : {$invoice->reference}\n"
+                . "Montant dû : " . self::money($invoice->balance_due) . " DJF\n"
+                . "Échéance : " . ($invoice->due_date?->format('d/m/Y') ?? '—') . "\n\n"
+                . "_" . ($school?->name ?? config('app.name')) . "_";
+
+            $pdfUrl = $this->invoicePdfUrl($invoice);
+
+            foreach ($invoice->student?->guardians ?? [] as $guardian) {
+                if (filled($guardian->email)) {
+                    Mail::send('emails.tasks.invoice-reminder', compact('invoice', 'school', 'guardian'), function ($msg) use ($guardian, $invoice, $task, $excelPath) {
+                        $msg->to($guardian->email)
+                            ->subject($task->meta['custom_subject'] ?? "Rappel de paiement — {$invoice->reference}");
+                        if ($excelPath) {
+                            $msg->attach($excelPath, [
+                                'as'   => 'rappel-paiements-' . now()->format('Ymd') . '.xlsx',
+                                'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            ]);
+                        }
+                    });
+                }
+                $this->sendWa($guardian, $waText);
+                $this->sendWaDoc($guardian, $pdfUrl, 'facture-' . $invoice->reference . '.pdf', 'Facture ' . $invoice->reference);
             }
         }
 
@@ -148,17 +216,31 @@ class DispatchScheduledTasks extends Command
         );
 
         foreach ($invoices as $invoice) {
-            foreach ($invoice->student?->guardians?->whereNotNull('email') ?? [] as $guardian) {
-                Mail::send('emails.tasks.overdue-alert', compact('invoice', 'school', 'guardian'), function ($msg) use ($guardian, $invoice, $task, $excelPath) {
-                    $msg->to($guardian->email)
-                        ->subject($task->meta['custom_subject'] ?? "⚠ Facture en retard — {$invoice->reference}");
-                    if ($excelPath) {
-                        $msg->attach($excelPath, [
-                            'as'   => 'alertes-retards-' . now()->format('Ymd') . '.xlsx',
-                            'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                        ]);
-                    }
-                });
+            $waText = "⚠️ *Facture en retard*\n"
+                . "Élève : " . ($invoice->student?->full_name ?? '—') . "\n"
+                . "Facture : {$invoice->reference}\n"
+                . "Montant dû : " . self::money($invoice->balance_due) . " DJF\n"
+                . "Échéance dépassée : " . ($invoice->due_date?->format('d/m/Y') ?? '—') . "\n\n"
+                . "Merci de régulariser dès que possible.\n"
+                . "_" . ($school?->name ?? config('app.name')) . "_";
+
+            $pdfUrl = $this->invoicePdfUrl($invoice);
+
+            foreach ($invoice->student?->guardians ?? [] as $guardian) {
+                if (filled($guardian->email)) {
+                    Mail::send('emails.tasks.overdue-alert', compact('invoice', 'school', 'guardian'), function ($msg) use ($guardian, $invoice, $task, $excelPath) {
+                        $msg->to($guardian->email)
+                            ->subject($task->meta['custom_subject'] ?? "⚠ Facture en retard — {$invoice->reference}");
+                        if ($excelPath) {
+                            $msg->attach($excelPath, [
+                                'as'   => 'alertes-retards-' . now()->format('Ymd') . '.xlsx',
+                                'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            ]);
+                        }
+                    });
+                }
+                $this->sendWa($guardian, $waText);
+                $this->sendWaDoc($guardian, $pdfUrl, 'facture-' . $invoice->reference . '.pdf', 'Facture ' . $invoice->reference);
             }
         }
 
@@ -185,17 +267,30 @@ class DispatchScheduledTasks extends Command
         );
 
         foreach ($invoices as $invoice) {
-            foreach ($invoice->student?->guardians?->whereNotNull('email') ?? [] as $guardian) {
-                Mail::send('emails.tasks.payment-due-soon', compact('invoice', 'school', 'guardian', 'daysBefore'), function ($msg) use ($guardian, $invoice, $task, $excelPath) {
-                    $msg->to($guardian->email)
-                        ->subject($task->meta['custom_subject'] ?? "Échéance de paiement proche — {$invoice->reference}");
-                    if ($excelPath) {
-                        $msg->attach($excelPath, [
-                            'as'   => 'echeances-proches-' . now()->format('Ymd') . '.xlsx',
-                            'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                        ]);
-                    }
-                });
+            $waText = "⏰ *Échéance de paiement proche*\n"
+                . "Élève : " . ($invoice->student?->full_name ?? '—') . "\n"
+                . "Facture : {$invoice->reference}\n"
+                . "Montant : " . self::money($invoice->balance_due) . " DJF\n"
+                . "À régler avant le " . ($invoice->due_date?->format('d/m/Y') ?? '—') . "\n\n"
+                . "_" . ($school?->name ?? config('app.name')) . "_";
+
+            $pdfUrl = $this->invoicePdfUrl($invoice);
+
+            foreach ($invoice->student?->guardians ?? [] as $guardian) {
+                if (filled($guardian->email)) {
+                    Mail::send('emails.tasks.payment-due-soon', compact('invoice', 'school', 'guardian', 'daysBefore'), function ($msg) use ($guardian, $invoice, $task, $excelPath) {
+                        $msg->to($guardian->email)
+                            ->subject($task->meta['custom_subject'] ?? "Échéance de paiement proche — {$invoice->reference}");
+                        if ($excelPath) {
+                            $msg->attach($excelPath, [
+                                'as'   => 'echeances-proches-' . now()->format('Ymd') . '.xlsx',
+                                'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            ]);
+                        }
+                    });
+                }
+                $this->sendWa($guardian, $waText);
+                $this->sendWaDoc($guardian, $pdfUrl, 'facture-' . $invoice->reference . '.pdf', 'Facture ' . $invoice->reference);
             }
         }
 
@@ -226,18 +321,28 @@ class DispatchScheduledTasks extends Command
             'presences-semaine'
         );
 
-        $admins = User::where('school_id', $task->school_id)->whereNotNull('email')->get();
+        $waText = "📊 *Résumé des présences* (7 derniers jours)\n"
+            . "Total : {$total}\n"
+            . "Présents : {$present}\n"
+            . "Absents : {$absent}\n"
+            . "Taux de présence : {$rate}%\n\n"
+            . "_" . ($school?->name ?? config('app.name')) . "_";
+
+        $admins = User::where('school_id', $task->school_id)->get();
         foreach ($admins as $admin) {
-            Mail::send('emails.tasks.attendance-summary', compact('school', 'admin', 'stats'), function ($msg) use ($admin, $task, $excelPath) {
-                $msg->to($admin->email)
-                    ->subject($task->meta['custom_subject'] ?? "Résumé des présences — " . now()->format('d/m/Y'));
-                if ($excelPath) {
-                    $msg->attach($excelPath, [
-                        'as'   => 'presences-' . now()->format('Ymd') . '.xlsx',
-                        'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    ]);
-                }
-            });
+            if (filled($admin->email)) {
+                Mail::send('emails.tasks.attendance-summary', compact('school', 'admin', 'stats'), function ($msg) use ($admin, $task, $excelPath) {
+                    $msg->to($admin->email)
+                        ->subject($task->meta['custom_subject'] ?? "Résumé des présences — " . now()->format('d/m/Y'));
+                    if ($excelPath) {
+                        $msg->attach($excelPath, [
+                            'as'   => 'presences-' . now()->format('Ymd') . '.xlsx',
+                            'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        ]);
+                    }
+                });
+            }
+            $this->sendWa($admin, $waText);
         }
 
         $this->sendToExtraRecipients($task, ['stats' => $stats], $excelPath, 'presences-semaine');
@@ -264,18 +369,27 @@ class DispatchScheduledTasks extends Command
             'rapport-financier'
         );
 
-        $admins = User::where('school_id', $task->school_id)->whereNotNull('email')->get();
+        $waText = "💰 *Résumé financier*\n"
+            . "Revenus du mois : " . self::money($revenue) . " DJF\n"
+            . "En attente : " . self::money($pending) . " DJF\n"
+            . "En retard : " . self::money($overdue) . " DJF\n\n"
+            . "_" . ($school?->name ?? config('app.name')) . "_";
+
+        $admins = User::where('school_id', $task->school_id)->get();
         foreach ($admins as $admin) {
-            Mail::send('emails.tasks.financial-summary', compact('school', 'admin', 'stats'), function ($msg) use ($admin, $task, $excelPath) {
-                $msg->to($admin->email)
-                    ->subject($task->meta['custom_subject'] ?? "Résumé financier — " . now()->format('F Y'));
-                if ($excelPath) {
-                    $msg->attach($excelPath, [
-                        'as'   => 'rapport-financier-' . now()->format('Ymd') . '.xlsx',
-                        'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                    ]);
-                }
-            });
+            if (filled($admin->email)) {
+                Mail::send('emails.tasks.financial-summary', compact('school', 'admin', 'stats'), function ($msg) use ($admin, $task, $excelPath) {
+                    $msg->to($admin->email)
+                        ->subject($task->meta['custom_subject'] ?? "Résumé financier — " . now()->format('F Y'));
+                    if ($excelPath) {
+                        $msg->attach($excelPath, [
+                            'as'   => 'rapport-financier-' . now()->format('Ymd') . '.xlsx',
+                            'mime' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        ]);
+                    }
+                });
+            }
+            $this->sendWa($admin, $waText);
         }
 
         $this->sendToExtraRecipients($task, ['stats' => $stats], $excelPath, 'rapport-financier');
@@ -292,10 +406,15 @@ class DispatchScheduledTasks extends Command
 
         $recipients = $this->resolveRecipients($task);
 
+        $waText = "*{$subject}*\n\n{$body}\n\n_" . ($school?->name ?? config('app.name')) . "_";
+
         foreach ($recipients as $recipient) {
-            Mail::send('emails.tasks.custom-notification', compact('school', 'recipient', 'body', 'task'), function ($msg) use ($recipient, $subject) {
-                $msg->to($recipient->email)->subject($subject);
-            });
+            if (filled($recipient->email)) {
+                Mail::send('emails.tasks.custom-notification', compact('school', 'recipient', 'body', 'task'), function ($msg) use ($recipient, $subject) {
+                    $msg->to($recipient->email)->subject($subject);
+                });
+            }
+            $this->sendWa($recipient, $waText);
         }
     }
 
@@ -351,6 +470,7 @@ class DispatchScheduledTasks extends Command
 
         $school  = $task->school;
         $subject = $task->meta['custom_subject'] ?? $task->name;
+        $waText  = "*{$subject}*\n\n_" . ($school?->name ?? config('app.name')) . "_";
 
         // Resolve the right template + data
         [$template, $data] = match ($task->type) {
@@ -380,24 +500,26 @@ class DispatchScheduledTasks extends Command
         // Send to extra users
         if (!empty($userIds)) {
             User::whereIn('id', $userIds)->whereNotNull('email')->get()
-                ->each(function (User $user) use ($template, $data, $subject, $attachFn) {
+                ->each(function (User $user) use ($template, $data, $subject, $attachFn, $waText) {
                     $viewData = array_merge($data, ['admin' => $user, 'recipient' => $user]);
                     Mail::send($template, $viewData, function ($msg) use ($user, $subject, $attachFn) {
                         $msg->to($user->email)->subject($subject);
                         $attachFn($msg);
                     });
+                    $this->sendWa($user, $waText);
                 });
         }
 
         // Send to extra guardians
         if (!empty($guardianIds)) {
             Guardian::whereIn('id', $guardianIds)->whereNotNull('email')->get()
-                ->each(function (Guardian $guardian) use ($template, $data, $subject, $attachFn) {
+                ->each(function (Guardian $guardian) use ($template, $data, $subject, $attachFn, $waText) {
                     $viewData = array_merge($data, ['admin' => $guardian, 'recipient' => $guardian]);
                     Mail::send($template, $viewData, function ($msg) use ($guardian, $subject, $attachFn) {
                         $msg->to($guardian->email)->subject($subject);
                         $attachFn($msg);
                     });
+                    $this->sendWa($guardian, $waText);
                 });
         }
     }

@@ -50,7 +50,7 @@ new #[Layout('layouts.teacher')] class extends Component {
     private function getStudents()
     {
         if (!$this->selectedClassId) return collect();
-        return Student::whereHas('enrollments', fn($q) => $q->where('school_class_id', $this->selectedClassId)->where('status', 'active'))
+        return Student::whereHas('enrollments', fn($q) => $q->where('school_class_id', $this->selectedClassId)->where('status', 'confirmed'))
             ->orderBy('name')
             ->get();
     }

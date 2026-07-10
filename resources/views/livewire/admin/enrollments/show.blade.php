@@ -254,7 +254,7 @@ new #[Layout('layouts.app')] class extends Component {
                             @if($student?->gender)
                             <span class="flex items-center gap-1.5">
                                 <x-icon name="o-user" class="w-3.5 h-3.5" />
-                                {{ $student->gender === 'male' ? 'Masculin' : 'Féminin' }}
+                                {{ $student->gender?->value === 'male' ? 'Masculin' : 'Féminin' }}
                             </span>
                             @endif
                         </div>

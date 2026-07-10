@@ -22,7 +22,7 @@ new #[Layout('layouts.guardian')] class extends Component {
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         @forelse($students as $student)
-        @php $enrollment = $student->enrollments->where('status', 'active')->first(); @endphp
+        @php $enrollment = $student->enrollments->firstWhere('status', \App\Enums\EnrollmentStatus::CONFIRMED); @endphp
         <x-card shadow class="border-0 overflow-hidden">
             <div class="h-3 w-full rounded-t-lg" style="background: linear-gradient(90deg, #059669, #10b981)"></div>
             <div class="p-5">

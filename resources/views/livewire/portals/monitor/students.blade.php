@@ -16,7 +16,7 @@ new #[Layout('layouts.monitor')] class extends Component {
         $schoolId = auth()->user()->school_id;
 
         $students = Student::where('school_id', $schoolId)
-            ->when($this->filterClassId, fn($q) => $q->whereHas('enrollments', fn($q) => $q->where('school_class_id', $this->filterClassId)->where('status', 'active')))
+            ->when($this->filterClassId, fn($q) => $q->whereHas('enrollments', fn($q) => $q->where('school_class_id', $this->filterClassId)->where('status', 'confirmed')))
             ->when($this->search, fn($q) => $q->where(function($q) {
                 $q->where('name', 'like', "%{$this->search}%");
             }))

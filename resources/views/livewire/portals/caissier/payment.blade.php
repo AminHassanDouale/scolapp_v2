@@ -86,7 +86,7 @@ new #[Layout('layouts.caissier')] class extends Component {
             ->get()
             ->map(fn ($inv) => [
                 'id'   => $inv->id,
-                'name' => $inv->reference . ' — ' . number_format($inv->balance_due ?? $inv->total, 0, ',', ' ') . ' DJF restant (' . ($inv->invoice_type?->value ?? $inv->status) . ')',
+                'name' => $inv->reference . ' — ' . number_format($inv->balance_due ?? $inv->total, 0, ',', ' ') . ' DJF restant (' . ($inv->invoice_type?->value ?? $inv->status?->value) . ')',
             ])
             ->toArray();
     }
@@ -150,7 +150,7 @@ new #[Layout('layouts.caissier')] class extends Component {
             $invoice      = $this->invoice->fresh();
             $newPaidTotal = (float) $invoice->paid_total + $this->amount;
             $newBalance   = max(0, (float) $invoice->total - $newPaidTotal);
-            $newStatus    = $newBalance <= 0.01 ? 'paid' : 'partial';
+            $newStatus    = $newBalance <= 0.01 ? 'paid' : 'partially_paid';
 
             $invoice->update([
                 'paid_total'  => $newPaidTotal,

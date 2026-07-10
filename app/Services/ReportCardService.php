@@ -20,7 +20,7 @@ class ReportCardService
     {
         $enrollments = Enrollment::where('school_class_id', $class->id)
             ->where('academic_year_id', $year->id)
-            ->where('status', 'active')
+            ->where('status', 'confirmed')
             ->with('student')
             ->get();
 
