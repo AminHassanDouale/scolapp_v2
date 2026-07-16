@@ -80,6 +80,10 @@ new #[Layout('layouts.app')] class extends Component {
             Mail::to($guardian->email)->send(
                 new GuardianWelcomeMail($guardian, $school, $this->student, $password)
             );
+            app(\App\Services\WhatsAppService::class)->notifyModel($guardian,
+                "👋 Bienvenue sur " . ($school->name ?? config('app.name')) . "\n"
+                . "Votre espace parent est prêt. Identifiant : {$guardian->email}.\n"
+                . "Vos identifiants complets vous ont été envoyés par email.");
             $this->success(
                 "Identifiants envoyés à {$guardian->email}",
                 "Tuteur : {$guardian->full_name}",

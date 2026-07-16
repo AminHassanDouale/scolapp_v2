@@ -35,8 +35,9 @@ return [
 
     // WhatsApp gateway (OpenWA — taxiconnect.online). Server-side only.
     'openwa' => [
+        'enabled'    => env('OPENWA_ENABLED', true),
         'base_url'   => env('OPENWA_BASE_URL', 'https://taxiconnect.online/api'),
-        'api_key'    => env('OPENWA_API_KEY'),
+        'api_key'    => env('OPENWA_KEY', env('OPENWA_API_KEY')),
         'session_id' => env('OPENWA_SESSION_ID'),
     ],
 

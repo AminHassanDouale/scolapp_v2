@@ -112,9 +112,16 @@ new #[Layout('layouts.app')] class extends Component {
         // Send receipt email to guardians
         $student = $invoice->student()->with('guardians')->first();
         if ($student) {
+            $payment->load('paymentAllocations.invoice.academicYear', 'school', 'student');
             $student->guardians
                 ->whereNotNull('email')
-                ->each(fn($g) => Mail::to($g->email)->send(new PaymentReceivedMail($payment->load('paymentAllocations.invoice.academicYear', 'school', 'student'), $g)));
+                ->each(fn($g) => Mail::to($g->email)->send(new PaymentReceivedMail($payment, $g)));
+
+            $waText = "✅ *Paiement reçu* — " . ($payment->school?->name ?? config('app.name')) . "\n"
+                . "Référence : {$payment->reference}\n"
+                . "Montant : " . number_format((float) $payment->amount, 0, ',', ' ') . " DJF\n"
+                . "Merci.";
+            $student->guardians->each(fn($g) => app(\App\Services\WhatsAppService::class)->notifyModel($g, $waText));
         }
 
         $this->success('Paiement enregistré et reçu envoyé.', position: 'toast-top toast-end', icon: 'o-paper-airplane', css: 'alert-success', timeout: 3000);

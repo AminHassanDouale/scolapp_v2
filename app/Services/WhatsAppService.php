@@ -113,6 +113,25 @@ class WhatsAppService
         return $results;
     }
 
+    /**
+     * Send a WhatsApp text to any model exposing a number
+     * (Guardian, User, Teacher…). Best-effort — never throws.
+     * Uses routeNotificationForWhatsApp() when available (User→Guardian bridge).
+     */
+    public function notifyModel(mixed $notifiable, string $message): bool
+    {
+        if (! $notifiable) {
+            return false;
+        }
+
+        $phone = method_exists($notifiable, 'routeNotificationForWhatsApp')
+            ? $notifiable->routeNotificationForWhatsApp()
+            : null;
+        $phone ??= $notifiable->whatsapp_number ?? $notifiable->phone ?? null;
+
+        return filled($phone) ? $this->sendMessage($phone, $message) : false;
+    }
+
     // ── Internals ──────────────────────────────────────────────────────────────
 
     /**
@@ -120,8 +139,12 @@ class WhatsAppService
      */
     private function post(string $endpoint, array $payload): bool
     {
+        if (! config('services.openwa.enabled', true)) {
+            return false;
+        }
+
         if (blank($this->sessionId) || blank(config('services.openwa.api_key'))) {
-            Log::warning('WhatsAppService: OpenWA not configured (set OPENWA_API_KEY and OPENWA_SESSION_ID).');
+            Log::warning('WhatsAppService: OpenWA not configured (set OPENWA_KEY and OPENWA_SESSION_ID).');
             return false;
         }
 

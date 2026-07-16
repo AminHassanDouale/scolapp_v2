@@ -182,6 +182,9 @@ new #[Layout('layouts.app')] class extends Component {
                         Mail::to($primaryGuardian->email)->send(
                             new GuardianWelcomeMail($primaryGuardian, $school, $student, $guardianPassword)
                         );
+                        app(\App\Services\WhatsAppService::class)->notifyModel($primaryGuardian,
+                            "👋 Bienvenue sur " . ($school->name ?? config('app.name')) . "\n"
+                            . "Votre espace parent est prêt. Vos identifiants vous ont été envoyés par email.");
                     } catch (\Throwable $e) {
                         \Illuminate\Support\Facades\Log::error('GuardianWelcomeMail failed: ' . $e->getMessage());
                     }

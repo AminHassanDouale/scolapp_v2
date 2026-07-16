@@ -216,12 +216,15 @@ new #[Layout('layouts.app')] class extends Component {
             'receive_notifications' => $this->g_receive_notifications,
         ]);
 
-        // ── Notification email ────────────────────────────────────────────────
+        // ── Notification email + WhatsApp ─────────────────────────────────────
         if ($guardian->email) {
             Mail::to($guardian->email)->queue(
                 new StudentRegisteredMail($student, $guardian, auth()->user()->school)
             );
         }
+        app(\App\Services\WhatsAppService::class)->notifyModel($guardian,
+            "🎒 *Inscription confirmée* — " . (auth()->user()->school?->name ?? config('app.name')) . "\n"
+            . "{$student->full_name} est bien inscrit(e). Bienvenue !");
 
         $this->redirectRoute('admin.enrollments.create', ['student_uuid' => $student->uuid], navigate: true);
     }

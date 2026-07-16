@@ -220,6 +220,9 @@ new #[Layout('layouts.app')] class extends Component {
                     Mail::to($guardian->email)->send(
                         new GuardianWelcomeMail($guardian, $school, $student, $plainPassword)
                     );
+                    app(\App\Services\WhatsAppService::class)->notifyModel($guardian,
+                        "👋 Bienvenue sur " . ($school->name ?? config('app.name')) . "\n"
+                        . "Votre espace parent est prêt. Vos identifiants vous ont été envoyés par email.");
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('GuardianWelcomeMail failed: ' . $e->getMessage());
                 }
@@ -230,6 +233,9 @@ new #[Layout('layouts.app')] class extends Component {
                     Mail::to($guardian->email)->queue(
                         new StudentRegisteredMail($student, $guardian, $school)
                     );
+                    app(\App\Services\WhatsAppService::class)->notifyModel($guardian,
+                        "🎒 *Inscription confirmée* — " . ($school->name ?? config('app.name')) . "\n"
+                        . "{$student->full_name} est bien inscrit(e). Bienvenue !");
                 } catch (\Throwable $e) {
                     \Illuminate\Support\Facades\Log::error('StudentRegisteredMail failed: ' . $e->getMessage());
                 }

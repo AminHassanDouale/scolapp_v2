@@ -57,9 +57,14 @@ new #[Layout('layouts.app')] class extends Component {
             ->whereNotNull('email')
             ->get() ?? collect();
 
+        $waText = "📄 *Bulletin disponible* — " . ($student?->school?->name ?? config('app.name')) . "\n"
+            . "Le bulletin de " . ($student?->full_name ?? 'votre enfant') . " est publié.\n"
+            . "Connectez-vous à votre espace parent pour le consulter.";
+
         $sent = 0;
         foreach ($guardians as $guardian) {
             Mail::to($guardian->email)->send(new ReportCardPublishedMail($this->reportCard, $guardian));
+            app(\App\Services\WhatsAppService::class)->notifyModel($guardian, $waText);
             $sent++;
         }
 

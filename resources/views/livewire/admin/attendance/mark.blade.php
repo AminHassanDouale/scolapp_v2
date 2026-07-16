@@ -206,18 +206,27 @@ new #[Layout('layouts.app')] class extends Component {
             $status = $this->attendance[$studentId];
             $reason = $this->notes[$studentId] ?? null;
 
+            $statusLabels = ['absent' => 'absent(e)', 'late' => 'en retard', 'excused' => 'excusé(e)'];
+            $waText = "🔔 *Absence signalée* — " . ($session->school?->name ?? config('app.name')) . "\n"
+                . "Élève : {$student->full_name}\n"
+                . "Statut : " . ($statusLabels[$status] ?? $status) . "\n"
+                . "Date : " . ($session->session_date?->format('d/m/Y') ?? today()->format('d/m/Y'))
+                . ($reason ? "\nMotif : {$reason}" : '');
+
             foreach ($student->guardians as $guardian) {
-                if (! $guardian->email) {
-                    continue;
+                // Email (parents with an address)
+                if ($guardian->email) {
+                    try {
+                        Mail::to($guardian->email)->send(
+                            new AbsenceNotificationMail($guardian, $student, $session, $status, $reason)
+                        );
+                        $sent++;
+                    } catch (\Throwable $e) {
+                        Log::warning("Guardian absence email failed to {$guardian->email}: " . $e->getMessage());
+                    }
                 }
-                try {
-                    Mail::to($guardian->email)->send(
-                        new AbsenceNotificationMail($guardian, $student, $session, $status, $reason)
-                    );
-                    $sent++;
-                } catch (\Throwable $e) {
-                    Log::warning("Guardian absence email failed to {$guardian->email}: " . $e->getMessage());
-                }
+                // WhatsApp (parents with a number) — best-effort
+                app(\App\Services\WhatsAppService::class)->notifyModel($guardian, $waText);
             }
         }
 

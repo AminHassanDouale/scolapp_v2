@@ -79,6 +79,12 @@ new #[Layout('layouts.app')] class extends Component {
             $student->guardians
                 ->whereNotNull('email')
                 ->each(fn($g) => Mail::to($g->email)->send(new PaymentReceivedMail($payment, $g)));
+
+            $waText = "✅ *Paiement reçu* — " . ($payment->school?->name ?? config('app.name')) . "\n"
+                . "Référence : {$payment->reference}\n"
+                . "Montant : " . number_format((float) $payment->amount, 0, ',', ' ') . " DJF\n"
+                . "Merci.";
+            $student->guardians->each(fn($g) => app(\App\Services\WhatsAppService::class)->notifyModel($g, $waText));
         }
 
         $this->invoice->refresh();
