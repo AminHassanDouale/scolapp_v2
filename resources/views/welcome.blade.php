@@ -312,6 +312,9 @@
                 ['🧾','Encaissement &amp; caisse','Guichet caissier dédié, reçus instantanés, rapport de caisse journalier par mode.'],
                 ['🔁','Réconciliation automatique','Chaque paiement rapproché de sa facture automatiquement — soldes toujours justes.'],
                 ['📈','Recouvrement &amp; relances','Identifiez les impayés et relancez automatiquement, sans effort manuel.'],
+                ['📝','Bulletins en ligne','Saisie des notes en ligne par les enseignants — bulletins générés et publiés automatiquement.'],
+                ['🗓️','Présences élèves &amp; enseignants','Appel numérique quotidien des élèves et des enseignants, en temps réel.'],
+                ['🔔','Alerte absence aux parents','Toute absence notifie instantanément le parent concerné par Email + WhatsApp.'],
                 ['🏫','Multi-portails','7 espaces dédiés : direction, comptable, caissier, enseignant, surveillant, parent, élève.'],
             ]; @endphp
             @foreach($features as $i => $f)
@@ -322,6 +325,34 @@
             </div>
             @endforeach
         </div>
+    </div>
+</section>
+
+{{-- ══════════════════ MANAGEMENT MODULES ══════════════════ --}}
+<section class="py-28 relative overflow-hidden" style="background:#070b18;">
+    <div class="blob blob-3" style="opacity:.18;"></div>
+    <div class="max-w-6xl mx-auto px-5 relative">
+        <div class="text-center max-w-2xl mx-auto mb-14 reveal">
+            <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Une suite complète</p>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Des dizaines de modules de gestion</h2>
+            <p class="mt-4 text-slate-400">Un menu pour chaque besoin de l'école — de la maternelle au lycée, de l'inscription à la comptabilité.</p>
+        </div>
+
+        <div class="reveal flex flex-wrap justify-center gap-2.5">
+            @php $modules=[
+                '🎓 Académique','🗂️ Cycles','📚 Niveaux','🏛️ Classes','📘 Matières','🚪 Salles',
+                '👧 Élèves','👪 Responsables','👨‍🏫 Enseignants','📝 Inscriptions',
+                '🗓️ Présences','⏱️ Emploi du temps','🧪 Évaluations','📄 Bulletins',
+                '🧾 Factures','💳 Paiements','📐 Barèmes de frais','💸 Dépenses','📒 Comptabilité',
+                '📢 Annonces','💬 Messagerie','📊 Rapports','⏰ Tâches planifiées',
+                '🏫 Paramètres école','🔐 Utilisateurs & rôles','📱 Facturation D-Money',
+            ]; @endphp
+            @foreach($modules as $m)
+            <span class="glass card-lift rounded-full px-4 py-2 text-sm text-slate-200 whitespace-nowrap">{!! $m !!}</span>
+            @endforeach
+        </div>
+
+        <p class="text-center text-slate-500 text-sm mt-8 reveal">…et bien plus encore, dans une interface unique.</p>
     </div>
 </section>
 
@@ -431,6 +462,7 @@
                     </div>
                     <div class="bg-emerald-600/90 text-white text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">✅ <b>Paiement confirmé</b><br>Reçu n° R-2048 — 25 000 DJF.<br>📎 recu-R-2048.pdf</div>
                     <div class="bg-white/10 text-slate-200 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">📄 <b>Nouvelle facture</b><br>Scolarité — versement 2. Échéance : 15/07.<br>📎 facture-F-1187.pdf</div>
+                    <div class="bg-indigo-500/20 text-indigo-100 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">🔔 <b>Absence signalée</b><br>Votre enfant a été noté absent aujourd'hui (08:15).</div>
                     <div class="bg-amber-500/20 text-amber-100 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">⏰ <b>Rappel</b> — échéance dans 3 jours. Payez en ligne en 1 clic.</div>
                     <div class="bg-red-500/20 text-red-100 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">⚠️ <b>Facture en retard</b> — merci de régulariser.</div>
                 </div>
