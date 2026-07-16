@@ -110,6 +110,8 @@
         .dot-live { position: relative; }
         .dot-live::after { content:''; position:absolute; inset:0; border-radius:9999px; background:#34d399; animation: pulseRing 2.4s infinite; }
 
+        .chapter-num { font-size: 3.25rem; line-height: 1; font-weight: 900; color: transparent; -webkit-text-stroke: 1px rgba(129,140,248,0.35); }
+
         [x-cloak] { display: none !important; }
     </style>
 </head>
@@ -124,10 +126,10 @@
             <span class="text-white font-extrabold text-lg tracking-tight">Scol<span class="grad-text">App</span></span>
         </a>
         <div class="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-300">
-            <a href="#features" class="hover:text-white transition">Fonctionnalités</a>
+            <a href="#academique" class="hover:text-white transition">Académique</a>
+            <a href="#finance" class="hover:text-white transition">Finance</a>
+            <a href="#communication" class="hover:text-white transition">Communication</a>
             <a href="#portals" class="hover:text-white transition">Portails</a>
-            <a href="#paiement" class="hover:text-white transition">Paiements</a>
-            <a href="#notifications" class="hover:text-white transition">Notifications</a>
             <a href="#tarifs" class="hover:text-white transition">Tarifs</a>
         </div>
         <div class="hidden lg:flex items-center gap-3">
@@ -139,10 +141,10 @@
         </button>
     </div>
     <div x-show="mobileOpen" x-cloak x-transition class="lg:hidden mt-3 mx-4 rounded-2xl glass p-5 space-y-3">
-        <a href="#features" @click="mobileOpen=false" class="block text-slate-200 py-1">Fonctionnalités</a>
+        <a href="#academique" @click="mobileOpen=false" class="block text-slate-200 py-1">Académique</a>
+        <a href="#finance" @click="mobileOpen=false" class="block text-slate-200 py-1">Finance</a>
+        <a href="#communication" @click="mobileOpen=false" class="block text-slate-200 py-1">Communication</a>
         <a href="#portals" @click="mobileOpen=false" class="block text-slate-200 py-1">Portails</a>
-        <a href="#paiement" @click="mobileOpen=false" class="block text-slate-200 py-1">Paiements</a>
-        <a href="#notifications" @click="mobileOpen=false" class="block text-slate-200 py-1">Notifications</a>
         <a href="#tarifs" @click="mobileOpen=false" class="block text-slate-200 py-1">Tarifs</a>
         <div class="pt-3 border-t border-white/10 flex gap-3">
             <a href="{{ route('login') }}" class="flex-1 text-center py-2.5 rounded-xl border border-white/10 text-white text-sm font-semibold">Connexion</a>
@@ -178,7 +180,7 @@
 
             <div class="mt-9 flex flex-col sm:flex-row gap-4">
                 <a href="#contact" class="btn-glow text-center text-white font-semibold px-7 py-4 rounded-xl">Demander une démo gratuite</a>
-                <a href="#features" class="text-center font-semibold px-7 py-4 rounded-xl border border-white/12 text-white hover:bg-white/5 transition">Découvrir les fonctionnalités</a>
+                <a href="#academique" class="text-center font-semibold px-7 py-4 rounded-xl border border-white/12 text-white hover:bg-white/5 transition">Découvrir les fonctionnalités</a>
             </div>
 
             <div class="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-slate-400">
@@ -293,31 +295,28 @@
     </div>
 </section>
 
-{{-- ══════════════════ FEATURES GRID ══════════════════ --}}
-<section id="features" class="py-28 relative" style="background: linear-gradient(180deg,#070b18,#0b1024);">
+{{-- ══════════════════ BLOC 1 · ACADÉMIQUE ══════════════════ --}}
+<section id="academique" class="py-28 relative" style="background: linear-gradient(180deg,#070b18,#0b1024);">
     <div class="max-w-7xl mx-auto px-5">
-        <div class="text-center max-w-2xl mx-auto mb-16 reveal">
-            <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Tout-en-un</p>
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Une plateforme, tous vos besoins</h2>
-            <p class="mt-4 text-slate-400">De l'inscription au recouvrement — académique, finance et communication réunis.</p>
+        <div class="flex items-end gap-5 mb-14 reveal">
+            <span class="chapter-num">01</span>
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-2">Bloc académique</p>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Toute la vie scolaire, en ligne</h2>
+                <p class="mt-3 text-slate-400 max-w-2xl">De la maternelle au lycée : notes, bulletins, présences et emplois du temps — saisis en ligne, à jour en temps réel.</p>
+            </div>
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            @php $features=[
-                ['📄','Zéro papier &amp; PDF','Factures, reçus et bulletins générés en PDF, prêts à imprimer ou à envoyer. Fini les classeurs.'],
-                ['📡','Suivi en temps réel','Tableaux de bord vivants : encaissements, présences et effectifs mis à jour à la seconde.'],
-                ['📊','Rapports dynamiques','Rapports financiers, présences et effectifs interactifs — exportables en PDF &amp; Excel.'],
-                ['💬','Notifications Email + WhatsApp','Chaque message part sur les deux canaux. Reçus et factures joints en PDF sur WhatsApp.'],
-                ['💳','Paiement en ligne intégré','Les parents règlent leurs factures via D-Money, Waafi, CAC Pay et Exim Pay.'],
-                ['🧾','Encaissement &amp; caisse','Guichet caissier dédié, reçus instantanés, rapport de caisse journalier par mode.'],
-                ['🔁','Réconciliation automatique','Chaque paiement rapproché de sa facture automatiquement — soldes toujours justes.'],
-                ['📈','Recouvrement &amp; relances','Identifiez les impayés et relancez automatiquement, sans effort manuel.'],
+            @php $academique=[
                 ['📝','Bulletins en ligne','Saisie des notes en ligne par les enseignants — bulletins générés et publiés automatiquement.'],
                 ['🗓️','Présences élèves &amp; enseignants','Appel numérique quotidien des élèves et des enseignants, en temps réel.'],
                 ['🔔','Alerte absence aux parents','Toute absence notifie instantanément le parent concerné par Email + WhatsApp.'],
-                ['🏫','Multi-portails','7 espaces dédiés : direction, comptable, caissier, enseignant, surveillant, parent, élève.'],
+                ['⏱️','Emplois du temps','Planning clair par classe, enseignant et salle — sans conflit d\'horaire.'],
+                ['🧪','Évaluations &amp; notes','Devoirs, quiz, examens et moyennes centralisés par matière.'],
+                ['🎓','Inscriptions &amp; dossiers','Inscriptions, réinscriptions et dossiers élèves reliés aux parents et aux classes.'],
             ]; @endphp
-            @foreach($features as $i => $f)
+            @foreach($academique as $i => $f)
             <div class="reveal glass card-lift rounded-2xl p-6" style="transition-delay: {{ $i*60 }}ms">
                 <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/25 to-cyan-500/20 flex items-center justify-center text-2xl mb-4">{!! $f[0] !!}</div>
                 <h3 class="text-white font-bold mb-2">{!! $f[1] !!}</h3>
@@ -328,8 +327,159 @@
     </div>
 </section>
 
+{{-- ══════════════════ BLOC 2 · FINANCE & RECOUVREMENT ══════════════════ --}}
+<section id="finance" class="py-28 relative overflow-hidden" style="background:#070b18;">
+    <div class="blob blob-2" style="opacity:.22;"></div>
+    <div class="max-w-7xl mx-auto px-5 relative">
+        <div class="flex items-end gap-5 mb-14 reveal">
+            <span class="chapter-num">02</span>
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-2">Bloc finance</p>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Encaissez plus vite, réconciliez sans effort</h2>
+                <p class="mt-3 text-slate-400 max-w-2xl">Paiement en ligne, suivi des encaissements, réconciliation et recouvrement — automatisés de bout en bout.</p>
+            </div>
+        </div>
+
+        <div id="paiement" class="grid lg:grid-cols-2 gap-16 items-center">
+            <div class="reveal-left">
+                <ul class="space-y-4">
+                    @foreach([
+                        ['Paiement en ligne des factures','D-Money · Waafi · CAC Pay · Exim Pay, intégrés nativement.'],
+                        ['Suivi des encaissements','Vue temps réel par jour, par mode et par caissier.'],
+                        ['Réconciliation automatique','Chaque versement rapproché de la bonne facture, sans saisie.'],
+                        ['Recouvrement intelligent','Impayés détectés, parents relancés automatiquement.'],
+                    ] as $li)
+                    <li class="flex gap-4">
+                        <span class="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">✓</span>
+                        <div><p class="text-white font-semibold text-sm">{!! $li[0] !!}</p><p class="text-slate-400 text-sm">{!! $li[1] !!}</p></div>
+                    </li>
+                    @endforeach
+                </ul>
+            </div>
+
+            <div class="reveal-right grid grid-cols-2 gap-4">
+                @php $gw=[
+                    ['D-Money','Mobile money','from-indigo-500 to-blue-500'],
+                    ['Waafi','Portefeuille mobile','from-emerald-500 to-teal-500'],
+                    ['CAC Pay','Paiement bancaire','from-cyan-500 to-sky-500'],
+                    ['Exim Pay','Passerelle Exim','from-violet-500 to-fuchsia-500'],
+                ]; @endphp
+                @foreach($gw as $g)
+                <div class="glass card-lift rounded-2xl p-6 text-center">
+                    <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br {{ $g[2] }} flex items-center justify-center text-white text-2xl mb-4 shadow-lg">💳</div>
+                    <p class="text-white font-bold">{{ $g[0] }}</p>
+                    <p class="text-xs text-slate-400 mt-1">{{ $g[1] }}</p>
+                    <span class="inline-block mt-3 text-[11px] px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-semibold">Intégré</span>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- finance feature cards --}}
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-14">
+            @php $finance=[
+                ['🧾','Encaissement &amp; caisse','Guichet caissier dédié, reçus instantanés, rapport de caisse journalier par mode.'],
+                ['📄','Factures &amp; reçus en PDF','Documents générés automatiquement, prêts à imprimer ou à envoyer.'],
+                ['📊','Rapports financiers dynamiques','Revenus, impayés et dépenses en temps réel — exportables PDF &amp; Excel.'],
+            ]; @endphp
+            @foreach($finance as $i => $f)
+            <div class="reveal glass card-lift rounded-2xl p-6" style="transition-delay: {{ $i*60 }}ms">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/25 to-cyan-500/20 flex items-center justify-center text-2xl mb-4">{!! $f[0] !!}</div>
+                <h3 class="text-white font-bold mb-2">{!! $f[1] !!}</h3>
+                <p class="text-sm text-slate-400 leading-relaxed">{!! $f[2] !!}</p>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+
+{{-- ══════════════════ BLOC 3 · COMMUNICATION ══════════════════ --}}
+<section id="communication" class="py-28" style="background: linear-gradient(180deg,#070b18,#0b1024);">
+    <div class="max-w-7xl mx-auto px-5">
+        <div class="flex items-end gap-5 mb-14 reveal">
+            <span class="chapter-num">03</span>
+            <div>
+                <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-2">Bloc communication</p>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Vos messages arrivent vraiment</h2>
+                <p class="mt-3 text-slate-400 max-w-2xl">Email <strong class="text-slate-200">et</strong> WhatsApp, avec documents joints — et relances automatiques des retards.</p>
+            </div>
+        </div>
+
+        <div id="notifications" class="grid lg:grid-cols-2 gap-16 items-center">
+            <div class="reveal-left flex justify-center order-2 lg:order-1">
+                <div class="w-72 rounded-[2.2rem] p-3 glass shadow-2xl">
+                    <div class="rounded-[1.7rem] bg-[#0b141a] p-4 space-y-3 min-h-[420px]">
+                        <div class="flex items-center gap-2 pb-3 border-b border-white/5">
+                            <span class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold">SA</span>
+                            <div><p class="text-white text-sm font-semibold">ScolApp</p><p class="text-[10px] text-emerald-400">en ligne</p></div>
+                        </div>
+                        <div class="bg-emerald-600/90 text-white text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">✅ <b>Paiement confirmé</b><br>Reçu n° R-2048 — 25 000 DJF.<br>📎 recu-R-2048.pdf</div>
+                        <div class="bg-white/10 text-slate-200 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">📄 <b>Nouvelle facture</b><br>Scolarité — versement 2. Échéance : 15/07.<br>📎 facture-F-1187.pdf</div>
+                        <div class="bg-indigo-500/20 text-indigo-100 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">🔔 <b>Absence signalée</b><br>Votre enfant a été noté absent aujourd'hui (08:15).</div>
+                        <div class="bg-amber-500/20 text-amber-100 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">⏰ <b>Rappel</b> — échéance dans 3 jours. Payez en ligne en 1 clic.</div>
+                        <div class="bg-red-500/20 text-red-100 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">⚠️ <b>Facture en retard</b> — merci de régulariser.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="reveal-right order-1 lg:order-2">
+                <div class="grid sm:grid-cols-2 gap-4">
+                    @foreach([
+                        ['💬','Email + WhatsApp','Chaque notification part sur les deux canaux, automatiquement.'],
+                        ['📎','Reçus &amp; factures en PDF','Envoyés directement sur le WhatsApp du parent.'],
+                        ['⏰','Rappel du prochain paiement','Alerte avant chaque échéance, sans oubli.'],
+                        ['⚠️','Alerte de retard','Les parents concernés sont prévenus automatiquement.'],
+                        ['🔔','Alerte d\'absence','Le parent est notifié dès que l\'élève est marqué absent.'],
+                        ['📢','Annonces &amp; messagerie','Communication école ↔ familles centralisée.'],
+                    ] as $n)
+                    <div class="glass card-lift rounded-2xl p-5">
+                        <div class="text-2xl mb-2">{!! $n[0] !!}</div>
+                        <p class="text-white font-semibold text-sm mb-1">{!! $n[1] !!}</p>
+                        <p class="text-slate-400 text-sm">{!! $n[2] !!}</p>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- ══════════════════ PORTALS ══════════════════ --}}
+<section id="portals" class="py-28" style="background:#070b18;">
+    <div class="max-w-7xl mx-auto px-5">
+        <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+            <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Chacun son espace</p>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">7 portails, une seule vérité</h2>
+            <p class="mt-4 text-slate-400">Chaque utilisateur voit exactement ce dont il a besoin — ni plus, ni moins.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            @php $portals=[
+                ['⚙️','Plateforme','Gestion multi-écoles, abonnements &amp; facturation SaaS.','from-slate-500/20 to-indigo-500/20'],
+                ['🏫','Direction / Admin','Contrôle total de l\'école : académique, finance, paramètres.','from-indigo-500/20 to-violet-500/20'],
+                ['💰','Comptable','Facturation, paiements, barèmes, comptabilité complète.','from-emerald-500/20 to-teal-500/20'],
+                ['🧾','Caissier','Encaissement au guichet, reçus PDF, rapport de caisse.','from-cyan-500/20 to-sky-500/20'],
+                ['👨‍🏫','Enseignant','Emploi du temps, présences, évaluations et notes.','from-blue-500/20 to-indigo-500/20'],
+                ['🧑‍✈️','Surveillant','Suivi des présences et de la vie scolaire en direct.','from-amber-500/20 to-orange-500/20'],
+                ['👪','Parent','Notes, présences, factures &amp; paiement en ligne.','from-pink-500/20 to-rose-500/20'],
+                ['🎒','Élève','Emploi du temps, notes, présences et annonces.','from-fuchsia-500/20 to-purple-500/20'],
+            ]; @endphp
+            @foreach($portals as $i => $p)
+            <div class="reveal glass card-lift rounded-2xl p-6 relative overflow-hidden" style="transition-delay: {{ $i*50 }}ms">
+                <div class="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-gradient-to-br {{ $p[3] }} blur-2xl"></div>
+                <div class="relative">
+                    <div class="text-3xl mb-3">{!! $p[0] !!}</div>
+                    <h3 class="text-white font-bold mb-1.5">{!! $p[1] !!}</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">{!! $p[2] !!}</p>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+
 {{-- ══════════════════ MANAGEMENT MODULES ══════════════════ --}}
-<section class="py-28 relative overflow-hidden" style="background:#070b18;">
+<section class="py-28 relative overflow-hidden" style="background: linear-gradient(180deg,#070b18,#0b1024);">
     <div class="blob blob-3" style="opacity:.18;"></div>
     <div class="max-w-6xl mx-auto px-5 relative">
         <div class="text-center max-w-2xl mx-auto mb-14 reveal">
@@ -366,131 +516,6 @@
             <p class="mt-2 text-sm text-slate-400">{{ $s['l'] }}</p>
         </div>
         @endforeach
-    </div>
-</section>
-
-{{-- ══════════════════ PORTALS ══════════════════ --}}
-<section id="portals" class="py-28" style="background: linear-gradient(180deg,#070b18,#0b1024);">
-    <div class="max-w-7xl mx-auto px-5">
-        <div class="text-center max-w-2xl mx-auto mb-16 reveal">
-            <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Chacun son espace</p>
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">7 portails, une seule vérité</h2>
-            <p class="mt-4 text-slate-400">Chaque utilisateur voit exactement ce dont il a besoin — ni plus, ni moins.</p>
-        </div>
-
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            @php $portals=[
-                ['⚙️','Plateforme','Gestion multi-écoles, abonnements &amp; facturation SaaS.','from-slate-500/20 to-indigo-500/20'],
-                ['🏫','Direction / Admin','Contrôle total de l\'école : académique, finance, paramètres.','from-indigo-500/20 to-violet-500/20'],
-                ['💰','Comptable','Facturation, paiements, barèmes, comptabilité complète.','from-emerald-500/20 to-teal-500/20'],
-                ['🧾','Caissier','Encaissement au guichet, reçus PDF, rapport de caisse.','from-cyan-500/20 to-sky-500/20'],
-                ['👨‍🏫','Enseignant','Emploi du temps, présences, évaluations et notes.','from-blue-500/20 to-indigo-500/20'],
-                ['🧑‍✈️','Surveillant','Suivi des présences et de la vie scolaire en direct.','from-amber-500/20 to-orange-500/20'],
-                ['👪','Parent','Notes, présences, factures &amp; paiement en ligne.','from-pink-500/20 to-rose-500/20'],
-                ['🎒','Élève','Emploi du temps, notes, présences et annonces.','from-fuchsia-500/20 to-purple-500/20'],
-            ]; @endphp
-            @foreach($portals as $i => $p)
-            <div class="reveal glass card-lift rounded-2xl p-6 relative overflow-hidden" style="transition-delay: {{ $i*50 }}ms">
-                <div class="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-gradient-to-br {{ $p[3] }} blur-2xl"></div>
-                <div class="relative">
-                    <div class="text-3xl mb-3">{!! $p[0] !!}</div>
-                    <h3 class="text-white font-bold mb-1.5">{!! $p[1] !!}</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">{!! $p[2] !!}</p>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-</section>
-
-{{-- ══════════════════ PAYMENTS DEEP DIVE ══════════════════ --}}
-<section id="paiement" class="py-28 relative overflow-hidden">
-    <div class="blob blob-2" style="opacity:.25;"></div>
-    <div class="max-w-7xl mx-auto px-5 relative">
-        <div class="grid lg:grid-cols-2 gap-16 items-center">
-            <div class="reveal-left">
-                <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Finance &amp; recouvrement</p>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">Encaissez plus vite, réconciliez sans effort</h2>
-                <p class="mt-5 text-slate-400 leading-relaxed">
-                    Les parents paient leurs factures en ligne, à distance, à toute heure. Chaque paiement met à jour
-                    le solde automatiquement, se réconcilie avec sa facture, et déclenche un reçu PDF — par Email et WhatsApp.
-                </p>
-                <ul class="mt-7 space-y-4">
-                    @foreach([
-                        ['Paiement en ligne des factures','D-Money · Waafi · CAC Pay · Exim Pay, intégrés nativement.'],
-                        ['Suivi des encaissements','Vue temps réel par jour, par mode et par caissier.'],
-                        ['Réconciliation automatique','Chaque versement rapproché de la bonne facture, sans saisie.'],
-                        ['Recouvrement intelligent','Impayés détectés, parents relancés automatiquement.'],
-                    ] as $li)
-                    <li class="flex gap-4">
-                        <span class="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">✓</span>
-                        <div><p class="text-white font-semibold text-sm">{!! $li[0] !!}</p><p class="text-slate-400 text-sm">{!! $li[1] !!}</p></div>
-                    </li>
-                    @endforeach
-                </ul>
-            </div>
-
-            <div class="reveal-right grid grid-cols-2 gap-4">
-                @php $gw=[
-                    ['D-Money','Mobile money','from-indigo-500 to-blue-500'],
-                    ['Waafi','Portefeuille mobile','from-emerald-500 to-teal-500'],
-                    ['CAC Pay','Paiement bancaire','from-cyan-500 to-sky-500'],
-                    ['Exim Pay','Passerelle Exim','from-violet-500 to-fuchsia-500'],
-                ]; @endphp
-                @foreach($gw as $g)
-                <div class="glass card-lift rounded-2xl p-6 text-center">
-                    <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br {{ $g[2] }} flex items-center justify-center text-white text-2xl mb-4 shadow-lg">💳</div>
-                    <p class="text-white font-bold">{{ $g[0] }}</p>
-                    <p class="text-xs text-slate-400 mt-1">{{ $g[1] }}</p>
-                    <span class="inline-block mt-3 text-[11px] px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-semibold">Intégré</span>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-</section>
-
-{{-- ══════════════════ NOTIFICATIONS ══════════════════ --}}
-<section id="notifications" class="py-28" style="background: linear-gradient(180deg,#070b18,#0b1024);">
-    <div class="max-w-7xl mx-auto px-5 grid lg:grid-cols-2 gap-16 items-center">
-        <div class="reveal-left order-2 lg:order-1 flex justify-center">
-            <div class="w-72 rounded-[2.2rem] p-3 glass shadow-2xl">
-                <div class="rounded-[1.7rem] bg-[#0b141a] p-4 space-y-3 min-h-[420px]">
-                    <div class="flex items-center gap-2 pb-3 border-b border-white/5">
-                        <span class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold">SA</span>
-                        <div><p class="text-white text-sm font-semibold">ScolApp</p><p class="text-[10px] text-emerald-400">en ligne</p></div>
-                    </div>
-                    <div class="bg-emerald-600/90 text-white text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">✅ <b>Paiement confirmé</b><br>Reçu n° R-2048 — 25 000 DJF.<br>📎 recu-R-2048.pdf</div>
-                    <div class="bg-white/10 text-slate-200 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">📄 <b>Nouvelle facture</b><br>Scolarité — versement 2. Échéance : 15/07.<br>📎 facture-F-1187.pdf</div>
-                    <div class="bg-indigo-500/20 text-indigo-100 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">🔔 <b>Absence signalée</b><br>Votre enfant a été noté absent aujourd'hui (08:15).</div>
-                    <div class="bg-amber-500/20 text-amber-100 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">⏰ <b>Rappel</b> — échéance dans 3 jours. Payez en ligne en 1 clic.</div>
-                    <div class="bg-red-500/20 text-red-100 text-xs rounded-2xl rounded-tl-sm p-3 max-w-[85%]">⚠️ <b>Facture en retard</b> — merci de régulariser.</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="reveal-right order-1 lg:order-2">
-            <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Communication automatisée</p>
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">Vos messages arrivent vraiment</h2>
-            <p class="mt-5 text-slate-400 leading-relaxed">
-                Les parents lisent WhatsApp. ScolApp envoie chaque notification par <strong class="text-slate-200">Email ET WhatsApp</strong>,
-                avec les documents joints — et relance automatiquement les retards.
-            </p>
-            <div class="mt-8 grid sm:grid-cols-2 gap-4">
-                @foreach([
-                    ['📎','Reçus &amp; factures en PDF','Envoyés directement sur le WhatsApp du parent.'],
-                    ['⏰','Rappel du prochain paiement','Alerte avant chaque échéance, sans oubli.'],
-                    ['⚠️','Alerte de retard','Les parents concernés sont prévenus automatiquement.'],
-                    ['📢','Annonces &amp; messagerie','Communication école ↔ familles centralisée.'],
-                ] as $n)
-                <div class="glass rounded-2xl p-5">
-                    <div class="text-2xl mb-2">{!! $n[0] !!}</div>
-                    <p class="text-white font-semibold text-sm mb-1">{!! $n[1] !!}</p>
-                    <p class="text-slate-400 text-sm">{!! $n[2] !!}</p>
-                </div>
-                @endforeach
-            </div>
-        </div>
     </div>
 </section>
 
@@ -637,12 +662,12 @@
                 <p class="text-sm text-slate-500 leading-relaxed">La plateforme de gestion scolaire nouvelle génération, pensée pour Djibouti et l'Afrique.</p>
             </div>
             <div>
-                <p class="text-white font-semibold text-sm mb-4">Produit</p>
+                <p class="text-white font-semibold text-sm mb-4">Blocs</p>
                 <ul class="space-y-2.5 text-sm text-slate-400">
-                    <li><a href="#features" class="hover:text-white transition">Fonctionnalités</a></li>
+                    <li><a href="#academique" class="hover:text-white transition">Académique</a></li>
+                    <li><a href="#finance" class="hover:text-white transition">Finance</a></li>
+                    <li><a href="#communication" class="hover:text-white transition">Communication</a></li>
                     <li><a href="#portals" class="hover:text-white transition">Portails</a></li>
-                    <li><a href="#paiement" class="hover:text-white transition">Paiements</a></li>
-                    <li><a href="#tarifs" class="hover:text-white transition">Tarifs</a></li>
                 </ul>
             </div>
             <div>
