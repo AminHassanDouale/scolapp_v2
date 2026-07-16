@@ -375,6 +375,31 @@
             </div>
         </div>
 
+        {{-- modes de paiement acceptés --}}
+        <div class="mt-14 reveal rounded-3xl glass p-8">
+            <p class="text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 mb-6">
+                Tous les modes de paiement acceptés — enregistrés &amp; réconciliés automatiquement
+            </p>
+            <div class="flex flex-wrap justify-center gap-3">
+                @php $methods=[
+                    ['💵','Espèces','Encaissement au guichet'],
+                    ['🌐','Paiement en ligne','D-Money · Waafi · CAC Pay · Exim Pay'],
+                    ['🏦','Virement bancaire','Enregistré avec référence'],
+                    ['🧾','Chèque','Suivi jusqu\'à l\'encaissement'],
+                    ['📱','Mobile Money','Portefeuilles mobiles'],
+                ]; @endphp
+                @foreach($methods as $m)
+                <div class="flex items-center gap-3 rounded-2xl bg-white/5 border border-white/8 px-4 py-3 card-lift">
+                    <span class="text-2xl">{!! $m[0] !!}</span>
+                    <div>
+                        <p class="text-white font-semibold text-sm">{!! $m[1] !!}</p>
+                        <p class="text-slate-400 text-xs">{!! $m[2] !!}</p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
         {{-- finance feature cards --}}
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-14">
             @php $finance=[
