@@ -546,43 +546,6 @@
     </div>
 </section>
 
-{{-- ══════════════════ PARCOURS (STUDENT JOURNEY) ══════════════════ --}}
-<section id="parcours" class="py-28 relative overflow-hidden" style="background:#070b18;">
-    <div class="blob blob-1" style="opacity:.16;"></div>
-    <div class="max-w-4xl mx-auto px-5 relative">
-        <div class="text-center max-w-2xl mx-auto mb-16 reveal">
-            <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Du premier jour au recouvrement</p>
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">De l'inscription au paiement, tout s'enchaîne</h2>
-            <p class="mt-4 text-slate-400">Un flux unique et automatisé — chaque étape déclenche la suivante, sans ressaisie.</p>
-        </div>
-
-        <div class="relative">
-            {{-- vertical rail --}}
-            <div class="absolute left-6 top-2 bottom-2 w-px bg-gradient-to-b from-indigo-500/60 via-cyan-500/40 to-transparent"></div>
-
-            @php $journey=[
-                ['🎓','Inscription de l\'élève','Créez le dossier élève, reliez le responsable et affectez la classe. Le compte parent est généré automatiquement — identifiants envoyés par Email + WhatsApp.'],
-                ['🧾','Facturation automatique','Frais d\'inscription et de scolarité générés selon le barème, avec échéancier en plusieurs versements et dates d\'échéance.'],
-                ['💳','Encaissement &amp; paiement','Le parent paie en ligne (D-Money · Waafi · CAC Pay · Exim Pay) ou au guichet (espèces, virement, chèque, mobile money).'],
-                ['📄','Reçu &amp; réconciliation','Reçu PDF envoyé automatiquement par Email + WhatsApp. La facture est réconciliée et le solde mis à jour en temps réel.'],
-                ['📊','Suivi, relance &amp; communication','Présences, notes et bulletins en ligne. Impayés détectés, parents relancés et échéances rappelées — automatiquement.'],
-            ]; @endphp
-            @foreach($journey as $i => $st)
-            <div class="relative pl-20 pb-8 last:pb-0 reveal" style="transition-delay: {{ $i*70 }}ms">
-                <div class="absolute left-0 top-0 w-12 h-12 rounded-2xl btn-glow flex items-center justify-center text-white font-black shadow-lg">{{ $i+1 }}</div>
-                <div class="glass card-lift rounded-2xl p-6">
-                    <div class="flex items-center gap-3 mb-2">
-                        <span class="text-2xl">{!! $st[0] !!}</span>
-                        <h3 class="text-white font-bold">{!! $st[1] !!}</h3>
-                    </div>
-                    <p class="text-sm text-slate-400 leading-relaxed">{!! $st[2] !!}</p>
-                </div>
-            </div>
-            @endforeach
-        </div>
-    </div>
-</section>
-
 {{-- ══════════════════ INTÉGRATIONS & API ══════════════════ --}}
 <section id="integrations" class="py-28 relative overflow-hidden" style="background: linear-gradient(180deg,#070b18,#0b1024);">
     <div class="blob blob-2" style="opacity:.18;"></div>
@@ -743,7 +706,6 @@
                     <li><a href="#academique" class="hover:text-white transition">Académique</a></li>
                     <li><a href="#finance" class="hover:text-white transition">Finance</a></li>
                     <li><a href="#communication" class="hover:text-white transition">Communication</a></li>
-                    <li><a href="#parcours" class="hover:text-white transition">Parcours</a></li>
                     <li><a href="#integrations" class="hover:text-white transition">Intégrations &amp; API</a></li>
                     <li><a href="#portals" class="hover:text-white transition">Portails</a></li>
                 </ul>
