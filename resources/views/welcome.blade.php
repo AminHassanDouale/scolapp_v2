@@ -33,6 +33,7 @@
             }
         }
     </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
@@ -132,6 +133,7 @@
             <a href="#portals" class="hover:text-white transition">Portails</a>
             <a href="#integrations" class="hover:text-white transition">Intégrations</a>
             <a href="#tarifs" class="hover:text-white transition">Tarifs</a>
+            <a href="#faq" class="hover:text-white transition">FAQ</a>
         </div>
         <div class="hidden lg:flex items-center gap-3">
             <a href="{{ route('login') }}" class="text-sm font-semibold text-slate-200 hover:text-white transition px-4 py-2">Se connecter</a>
@@ -148,6 +150,7 @@
         <a href="#portals" @click="mobileOpen=false" class="block text-slate-200 py-1">Portails</a>
         <a href="#integrations" @click="mobileOpen=false" class="block text-slate-200 py-1">Intégrations</a>
         <a href="#tarifs" @click="mobileOpen=false" class="block text-slate-200 py-1">Tarifs</a>
+        <a href="#faq" @click="mobileOpen=false" class="block text-slate-200 py-1">FAQ</a>
         <div class="pt-3 border-t border-white/10 flex gap-3">
             <a href="{{ route('login') }}" class="flex-1 text-center py-2.5 rounded-xl border border-white/10 text-white text-sm font-semibold">Connexion</a>
             <a href="#contact" @click="mobileOpen=false" class="flex-1 text-center btn-glow py-2.5 rounded-xl text-white text-sm font-semibold">Démo</a>
@@ -612,6 +615,58 @@
                 <a href="#contact" class="block text-center py-3 rounded-xl font-semibold {{ $pl[6] ? 'btn-glow text-white' : 'border border-white/12 text-white hover:bg-white/5' }} transition">Demander un devis</a>
             </div>
             @endforeach
+        </div>
+    </div>
+</section>
+
+{{-- ══════════════════ FAQ ══════════════════ --}}
+<section id="faq" class="py-28 relative overflow-hidden" style="background:#070b18;">
+    <div class="blob blob-3" style="opacity:.15;"></div>
+    <div class="max-w-3xl mx-auto px-5 relative">
+        <div class="text-center mb-14 reveal">
+            <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Questions fréquentes</p>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Tout ce que vous devez savoir</h2>
+            <p class="mt-4 text-slate-400">Les réponses aux questions que se posent les directeurs d'école.</p>
+        </div>
+
+        <div class="space-y-3">
+            @php $faqs=[
+                ['Faut-il installer un logiciel ou du matériel ?','Non. ScolApp est 100% en ligne — accessible depuis n\'importe quel navigateur, ordinateur ou téléphone. Aucune installation, aucune maintenance de votre côté.'],
+                ['Comment les parents paient-ils la scolarité ?','En ligne en un clic (D-Money, Waafi, CAC Pay, Exim Pay) ou au guichet (espèces, virement, chèque, mobile money). Chaque paiement génère un reçu PDF envoyé par Email et WhatsApp.'],
+                ['Les notifications WhatsApp sont-elles vraiment automatiques ?','Oui. Absences, factures, reçus, rappels d\'échéance et relances d\'impayés partent automatiquement — par Email et WhatsApp — sans aucune action manuelle.'],
+                ['L\'application est-elle disponible en arabe ?','Oui : interface complète en français, arabe (affichage de droite à gauche) et anglais. Chaque utilisateur choisit sa langue.'],
+                ['Mes données scolaires et financières sont-elles sécurisées ?','Absolument. Accès par rôles (chacun ne voit que ce qui le concerne), connexions chiffrées (HTTPS) et journal d\'audit de chaque action sensible.'],
+                ['Combien de temps pour démarrer ?','Quelques jours. Nous configurons vos cycles, classes, frais et utilisateurs, puis vos équipes et parents reçoivent leurs accès.'],
+                ['Peut-on gérer plusieurs écoles ?','Oui. La console multi-écoles pilote plusieurs établissements, avec abonnements et facturation centralisés — idéal pour les groupes scolaires.'],
+                ['Peut-on connecter nos outils existants ?','Oui. ScolApp expose une API REST sécurisée et des webhooks, et s\'intègre aux passerelles de paiement, WhatsApp, email et services tiers à la demande.'],
+            ]; @endphp
+            @foreach($faqs as $i => $q)
+            <div x-data="{ open: {{ $i === 0 ? 'true' : 'false' }} }"
+                 class="reveal glass rounded-2xl overflow-hidden transition-colors"
+                 :class="open ? 'border-indigo-500/40' : ''">
+                <button type="button" @click="open = !open"
+                        class="w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
+                    <span class="text-white font-semibold text-sm sm:text-base">{!! $q[0] !!}</span>
+                    <span class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
+                          :class="open ? 'btn-glow rotate-45' : 'bg-white/8'">
+                        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
+                        </svg>
+                    </span>
+                </button>
+                <div x-show="open" x-collapse.duration.300ms
+                     x-transition:enter="transition ease-out duration-300"
+                     x-transition:enter-start="opacity-0 -translate-y-2"
+                     x-transition:enter-end="opacity-100 translate-y-0">
+                    <p class="px-5 sm:px-6 pb-6 -mt-1 text-slate-400 text-sm leading-relaxed">{!! $q[1] !!}</p>
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+        <div class="text-center mt-12 reveal">
+            <p class="text-slate-400 text-sm mb-4">Une autre question ? Nous y répondons en direct.</p>
+            <a href="#contact" class="btn-glow inline-block text-white font-semibold px-7 py-3.5 rounded-xl">Poser ma question</a>
         </div>
     </div>
 </section>
