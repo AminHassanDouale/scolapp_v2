@@ -125,11 +125,12 @@
             <img src="{{ asset('images/logo_ScolApp.png') }}" alt="ScolApp" class="h-9 w-9 object-contain">
             <span class="text-white font-extrabold text-lg tracking-tight">Scol<span class="grad-text">App</span></span>
         </a>
-        <div class="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-300">
+        <div class="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-300">
             <a href="#academique" class="hover:text-white transition">Académique</a>
             <a href="#finance" class="hover:text-white transition">Finance</a>
             <a href="#communication" class="hover:text-white transition">Communication</a>
             <a href="#portals" class="hover:text-white transition">Portails</a>
+            <a href="#integrations" class="hover:text-white transition">Intégrations</a>
             <a href="#tarifs" class="hover:text-white transition">Tarifs</a>
         </div>
         <div class="hidden lg:flex items-center gap-3">
@@ -145,6 +146,7 @@
         <a href="#finance" @click="mobileOpen=false" class="block text-slate-200 py-1">Finance</a>
         <a href="#communication" @click="mobileOpen=false" class="block text-slate-200 py-1">Communication</a>
         <a href="#portals" @click="mobileOpen=false" class="block text-slate-200 py-1">Portails</a>
+        <a href="#integrations" @click="mobileOpen=false" class="block text-slate-200 py-1">Intégrations</a>
         <a href="#tarifs" @click="mobileOpen=false" class="block text-slate-200 py-1">Tarifs</a>
         <div class="pt-3 border-t border-white/10 flex gap-3">
             <a href="{{ route('login') }}" class="flex-1 text-center py-2.5 rounded-xl border border-white/10 text-white text-sm font-semibold">Connexion</a>
@@ -544,27 +546,76 @@
     </div>
 </section>
 
-{{-- ══════════════════ HOW IT WORKS ══════════════════ --}}
-<section class="py-28" style="background:#070b18;">
-    <div class="max-w-6xl mx-auto px-5">
+{{-- ══════════════════ PARCOURS (STUDENT JOURNEY) ══════════════════ --}}
+<section id="parcours" class="py-28 relative overflow-hidden" style="background:#070b18;">
+    <div class="blob blob-1" style="opacity:.16;"></div>
+    <div class="max-w-4xl mx-auto px-5 relative">
         <div class="text-center max-w-2xl mx-auto mb-16 reveal">
-            <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Simple &amp; rapide</p>
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Opérationnel en quelques jours</h2>
+            <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Du premier jour au recouvrement</p>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">De l'inscription au paiement, tout s'enchaîne</h2>
+            <p class="mt-4 text-slate-400">Un flux unique et automatisé — chaque étape déclenche la suivante, sans ressaisie.</p>
         </div>
-        <div class="grid md:grid-cols-3 gap-6">
-            @php $steps=[
-                ['01','Configurez votre école','Cycles, classes, frais et utilisateurs — importés en un clin d\'œil.'],
-                ['02','Invitez vos équipes &amp; parents','Chacun reçoit son portail : enseignants, comptables, parents, élèves.'],
-                ['03','Encaissez &amp; communiquez','Facturez, encaissez en ligne, notifiez par Email + WhatsApp, suivez tout en temps réel.'],
+
+        <div class="relative">
+            {{-- vertical rail --}}
+            <div class="absolute left-6 top-2 bottom-2 w-px bg-gradient-to-b from-indigo-500/60 via-cyan-500/40 to-transparent"></div>
+
+            @php $journey=[
+                ['🎓','Inscription de l\'élève','Créez le dossier élève, reliez le responsable et affectez la classe. Le compte parent est généré automatiquement — identifiants envoyés par Email + WhatsApp.'],
+                ['🧾','Facturation automatique','Frais d\'inscription et de scolarité générés selon le barème, avec échéancier en plusieurs versements et dates d\'échéance.'],
+                ['💳','Encaissement &amp; paiement','Le parent paie en ligne (D-Money · Waafi · CAC Pay · Exim Pay) ou au guichet (espèces, virement, chèque, mobile money).'],
+                ['📄','Reçu &amp; réconciliation','Reçu PDF envoyé automatiquement par Email + WhatsApp. La facture est réconciliée et le solde mis à jour en temps réel.'],
+                ['📊','Suivi, relance &amp; communication','Présences, notes et bulletins en ligne. Impayés détectés, parents relancés et échéances rappelées — automatiquement.'],
             ]; @endphp
-            @foreach($steps as $i => $st)
-            <div class="reveal glass rounded-2xl p-8 relative" style="transition-delay: {{ $i*80 }}ms">
-                <span class="text-5xl font-extrabold text-white/5 absolute top-4 right-5">{{ $st[0] }}</span>
-                <div class="w-10 h-10 rounded-xl btn-glow flex items-center justify-center text-white font-bold mb-5">{{ $i+1 }}</div>
-                <h3 class="text-white font-bold mb-2">{!! $st[1] !!}</h3>
-                <p class="text-sm text-slate-400 leading-relaxed">{!! $st[2] !!}</p>
+            @foreach($journey as $i => $st)
+            <div class="relative pl-20 pb-8 last:pb-0 reveal" style="transition-delay: {{ $i*70 }}ms">
+                <div class="absolute left-0 top-0 w-12 h-12 rounded-2xl btn-glow flex items-center justify-center text-white font-black shadow-lg">{{ $i+1 }}</div>
+                <div class="glass card-lift rounded-2xl p-6">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="text-2xl">{!! $st[0] !!}</span>
+                        <h3 class="text-white font-bold">{!! $st[1] !!}</h3>
+                    </div>
+                    <p class="text-sm text-slate-400 leading-relaxed">{!! $st[2] !!}</p>
+                </div>
             </div>
             @endforeach
+        </div>
+    </div>
+</section>
+
+{{-- ══════════════════ INTÉGRATIONS & API ══════════════════ --}}
+<section id="integrations" class="py-28 relative overflow-hidden" style="background: linear-gradient(180deg,#070b18,#0b1024);">
+    <div class="blob blob-2" style="opacity:.18;"></div>
+    <div class="max-w-7xl mx-auto px-5 relative">
+        <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+            <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Ouvert &amp; connecté</p>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Des intégrations tierces, quand vous en avez besoin</h2>
+            <p class="mt-4 text-slate-400">ScolApp expose une API sécurisée et se connecte à vos services externes — paiement, messagerie, comptabilité et plus.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            @php $integrations=[
+                ['🔌','API REST sécurisée','Accédez à vos données depuis vos propres outils via des jetons d\'accès (tokens).'],
+                ['💳','Passerelles de paiement','D-Money, Waafi, CAC Pay et Exim Pay intégrés — prêts à encaisser en ligne.'],
+                ['💬','Passerelle WhatsApp','Notifications automatiques (reçus, factures, alertes) via l\'API WhatsApp.'],
+                ['✉️','Email / SMTP','Envoi transactionnel fiable : reçus, bulletins, relances et confirmations.'],
+                ['🔔','Webhooks','Recevez les événements (paiement, inscription, absence) en temps réel dans vos systèmes.'],
+                ['🧩','Intégrations sur-mesure','Comptabilité, SMS, ERP ou tout autre service tiers — connectés à la demande.'],
+            ]; @endphp
+            @foreach($integrations as $i => $f)
+            <div class="reveal glass card-lift rounded-2xl p-6" style="transition-delay: {{ $i*60 }}ms">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500/25 to-cyan-500/20 flex items-center justify-center text-2xl mb-4">{!! $f[0] !!}</div>
+                <h3 class="text-white font-bold mb-2">{!! $f[1] !!}</h3>
+                <p class="text-sm text-slate-400 leading-relaxed">{!! $f[2] !!}</p>
+            </div>
+            @endforeach
+        </div>
+
+        <div class="mt-10 text-center reveal">
+            <span class="inline-flex items-center gap-2 text-sm text-slate-400 glass rounded-full px-5 py-2.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                API &amp; intégrations disponibles sur demande — adaptées à votre établissement.
+            </span>
         </div>
     </div>
 </section>
@@ -692,6 +743,8 @@
                     <li><a href="#academique" class="hover:text-white transition">Académique</a></li>
                     <li><a href="#finance" class="hover:text-white transition">Finance</a></li>
                     <li><a href="#communication" class="hover:text-white transition">Communication</a></li>
+                    <li><a href="#parcours" class="hover:text-white transition">Parcours</a></li>
+                    <li><a href="#integrations" class="hover:text-white transition">Intégrations &amp; API</a></li>
                     <li><a href="#portals" class="hover:text-white transition">Portails</a></li>
                 </ul>
             </div>
