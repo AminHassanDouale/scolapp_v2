@@ -312,22 +312,64 @@
             </div>
         </div>
 
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            @php $academique=[
-                ['📝','Bulletins en ligne','Saisie des notes en ligne par les enseignants — bulletins générés et publiés automatiquement.'],
-                ['🗓️','Présences élèves &amp; enseignants','Appel numérique quotidien des élèves et des enseignants, en temps réel.'],
-                ['🔔','Alerte absence aux parents','Toute absence notifie instantanément le parent concerné par Email + WhatsApp.'],
-                ['⏱️','Emplois du temps','Planning clair par classe, enseignant et salle — sans conflit d\'horaire.'],
-                ['🧪','Évaluations &amp; notes','Devoirs, quiz, examens et moyennes centralisés par matière.'],
-                ['🎓','Inscriptions &amp; dossiers','Inscriptions, réinscriptions et dossiers élèves reliés aux parents et aux classes.'],
-            ]; @endphp
-            @foreach($academique as $i => $f)
-            <div class="reveal glass card-lift rounded-2xl p-6" style="transition-delay: {{ $i*60 }}ms">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/25 to-cyan-500/20 flex items-center justify-center text-2xl mb-4">{!! $f[0] !!}</div>
-                <h3 class="text-white font-bold mb-2">{!! $f[1] !!}</h3>
-                <p class="text-sm text-slate-400 leading-relaxed">{!! $f[2] !!}</p>
+        {{-- Infographic: central hub with numbered branches (responsive) --}}
+        @php
+            $acadLeft = [
+                ['01','📝','amber','Bulletins en ligne','Saisie des notes en ligne par les enseignants — bulletins générés et publiés automatiquement.'],
+                ['02','🗓️','rose','Présences élèves &amp; enseignants','Appel numérique quotidien des élèves et des enseignants, en temps réel.'],
+                ['03','🔔','emerald','Alerte absence aux parents','Toute absence notifie instantanément le parent concerné par Email + WhatsApp.'],
+            ];
+            $acadRight = [
+                ['04','⏱️','teal','Emplois du temps','Planning clair par classe, enseignant et salle — sans conflit d\'horaire.'],
+                ['05','🧪','sky','Évaluations &amp; notes','Devoirs, quiz, examens et moyennes centralisés par matière.'],
+                ['06','🎓','violet','Inscriptions &amp; dossiers','Inscriptions, réinscriptions et dossiers élèves reliés aux parents et aux classes.'],
+            ];
+        @endphp
+
+        <div class="grid lg:grid-cols-[1fr_auto_1fr] gap-x-6 gap-y-8 items-center">
+
+            {{-- Left branch --}}
+            <div class="space-y-8 lg:space-y-12 order-2 lg:order-1">
+                @foreach($acadLeft as $i => $f)
+                <div class="reveal-left flex items-center gap-4 lg:justify-end" style="transition-delay: {{ $i*80 }}ms">
+                    <div class="order-2 lg:order-1 lg:text-right">
+                        <h3 class="text-white font-bold text-sm sm:text-base flex items-center gap-2 lg:justify-end">
+                            <span class="text-lg lg:hidden">{!! $f[1] !!}</span>{!! $f[3] !!}<span class="hidden lg:inline text-lg">{!! $f[1] !!}</span>
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">{!! $f[4] !!}</p>
+                    </div>
+                    <span class="hidden lg:block order-2 w-9 border-t border-dashed border-white/20"></span>
+                    <div class="order-1 lg:order-3 w-14 h-14 rounded-full bg-white/5 ring-2 ring-{{ $f[2] }}-400/50 text-{{ $f[2] }}-300 flex items-center justify-center font-black shrink-0 card-lift">{{ $f[0] }}</div>
+                </div>
+                @endforeach
             </div>
-            @endforeach
+
+            {{-- Central hub --}}
+            <div class="flex justify-center order-1 lg:order-2 lg:px-4">
+                <div class="relative">
+                    <span class="absolute inset-0 rounded-full ring-2 ring-indigo-400/40 animate-pulse-ring"></span>
+                    <div class="relative w-28 h-28 lg:w-36 lg:h-36 rounded-full glass flex flex-col items-center justify-center shadow-2xl">
+                        <span class="text-4xl lg:text-5xl">🎓</span>
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">Académique</span>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Right branch --}}
+            <div class="space-y-8 lg:space-y-12 order-3">
+                @foreach($acadRight as $i => $f)
+                <div class="reveal-right flex items-center gap-4" style="transition-delay: {{ $i*80 }}ms">
+                    <div class="order-1 w-14 h-14 rounded-full bg-white/5 ring-2 ring-{{ $f[2] }}-400/50 text-{{ $f[2] }}-300 flex items-center justify-center font-black shrink-0 card-lift">{{ $f[0] }}</div>
+                    <span class="hidden lg:block order-2 w-9 border-t border-dashed border-white/20"></span>
+                    <div class="order-2 lg:order-3">
+                        <h3 class="text-white font-bold text-sm sm:text-base flex items-center gap-2">
+                            <span class="text-lg">{!! $f[1] !!}</span>{!! $f[3] !!}
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">{!! $f[4] !!}</p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
         </div>
     </div>
 </section>
