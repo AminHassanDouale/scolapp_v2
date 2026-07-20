@@ -378,48 +378,64 @@
 <section id="finance" class="py-28 relative overflow-hidden" style="background:#070b18;">
     <div class="blob blob-2" style="opacity:.22;"></div>
     <div class="max-w-7xl mx-auto px-5 relative">
-        <div class="flex items-end gap-5 mb-14 reveal">
+        <div class="flex items-center gap-5 mb-14 reveal">
             <span class="chapter-num">02</span>
-            <div>
-                <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-2">Bloc finance</p>
-                <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Encaissez plus vite, réconciliez sans effort</h2>
-                <p class="mt-3 text-slate-400 max-w-2xl">Paiement en ligne, suivi des encaissements, réconciliation et recouvrement — automatisés de bout en bout.</p>
+            <p class="text-sm font-semibold uppercase tracking-widest grad-text">Bloc finance</p>
+        </div>
+
+        {{-- Infographic: big circle + numbered steps down the side (responsive) --}}
+        <div id="paiement" class="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
+            {{-- Left focal circle --}}
+            <div class="flex justify-center reveal-left">
+                <div class="relative w-72 h-72 sm:w-80 sm:h-80 rounded-full flex flex-col items-center justify-center text-center px-10 shadow-2xl"
+                     style="background: radial-gradient(circle at 50% 35%, rgba(79,70,229,0.38), rgba(6,182,212,0.12) 62%, rgba(255,255,255,0.03)); border:1px solid rgba(129,140,248,0.25);">
+                    <span class="absolute inset-0 rounded-full ring-2 ring-indigo-400/20 animate-pulse-ring"></span>
+                    <h3 class="relative text-2xl sm:text-3xl font-extrabold text-white leading-tight">Encaissez plus vite,<br>réconciliez sans effort</h3>
+                    <p class="relative text-slate-300 text-sm mt-3 leading-relaxed">Paiement en ligne, suivi des encaissements, réconciliation et recouvrement — automatisés de bout en bout.</p>
+                </div>
+            </div>
+
+            {{-- Right numbered steps --}}
+            <div class="relative">
+                <div class="absolute left-7 top-6 bottom-6 w-px bg-gradient-to-b from-indigo-500/50 via-cyan-500/40 to-transparent"></div>
+                <div class="space-y-7">
+                    @php $finSteps=[
+                        ['01','💳','from-indigo-500 to-blue-600','Paiement en ligne','Les parents règlent leurs factures via D-Money, Waafi, CAC Pay et Exim Pay.'],
+                        ['02','🧾','from-blue-500 to-cyan-600','Encaissement au guichet','Espèces, virement, chèque, mobile money — reçu PDF instantané.'],
+                        ['03','📡','from-cyan-500 to-teal-600','Suivi des encaissements','Vue temps réel par jour, par mode et par caissier.'],
+                        ['04','🔁','from-amber-500 to-orange-600','Réconciliation automatique','Chaque versement rapproché de la bonne facture, sans saisie.'],
+                        ['05','📈','from-emerald-500 to-teal-600','Recouvrement &amp; relances','Impayés détectés, parents relancés automatiquement.'],
+                    ]; @endphp
+                    @foreach($finSteps as $i => $s)
+                    <div class="reveal-right relative flex items-center gap-4 sm:gap-5" style="transition-delay: {{ $i*70 }}ms">
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-br {{ $s[2] }} flex items-center justify-center text-2xl shrink-0 shadow-lg ring-4 ring-[#070b18]">{!! $s[1] !!}</div>
+                        <span class="text-3xl sm:text-4xl font-black text-white/15 shrink-0 w-10 sm:w-12 text-center">{{ $s[0] }}</span>
+                        <div>
+                            <h4 class="text-white font-bold text-sm sm:text-base">{!! $s[3] !!}</h4>
+                            <p class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">{!! $s[4] !!}</p>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
             </div>
         </div>
 
-        <div id="paiement" class="grid lg:grid-cols-2 gap-16 items-center">
-            <div class="reveal-left">
-                <ul class="space-y-4">
-                    @foreach([
-                        ['Paiement en ligne des factures','D-Money · Waafi · CAC Pay · Exim Pay, intégrés nativement.'],
-                        ['Suivi des encaissements','Vue temps réel par jour, par mode et par caissier.'],
-                        ['Réconciliation automatique','Chaque versement rapproché de la bonne facture, sans saisie.'],
-                        ['Recouvrement intelligent','Impayés détectés, parents relancés automatiquement.'],
-                    ] as $li)
-                    <li class="flex gap-4">
-                        <span class="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">✓</span>
-                        <div><p class="text-white font-semibold text-sm">{!! $li[0] !!}</p><p class="text-slate-400 text-sm">{!! $li[1] !!}</p></div>
-                    </li>
-                    @endforeach
-                </ul>
+        {{-- Payment gateways --}}
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-16">
+            @php $gw=[
+                ['D-Money','Mobile money','from-indigo-500 to-blue-500'],
+                ['Waafi','Portefeuille mobile','from-emerald-500 to-teal-500'],
+                ['CAC Pay','Paiement bancaire','from-cyan-500 to-sky-500'],
+                ['Exim Pay','Passerelle Exim','from-violet-500 to-fuchsia-500'],
+            ]; @endphp
+            @foreach($gw as $g)
+            <div class="reveal glass card-lift rounded-2xl p-6 text-center">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br {{ $g[2] }} flex items-center justify-center text-white text-2xl mb-4 shadow-lg">💳</div>
+                <p class="text-white font-bold">{{ $g[0] }}</p>
+                <p class="text-xs text-slate-400 mt-1">{{ $g[1] }}</p>
+                <span class="inline-block mt-3 text-[11px] px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-semibold">Intégré</span>
             </div>
-
-            <div class="reveal-right grid grid-cols-2 gap-4">
-                @php $gw=[
-                    ['D-Money','Mobile money','from-indigo-500 to-blue-500'],
-                    ['Waafi','Portefeuille mobile','from-emerald-500 to-teal-500'],
-                    ['CAC Pay','Paiement bancaire','from-cyan-500 to-sky-500'],
-                    ['Exim Pay','Passerelle Exim','from-violet-500 to-fuchsia-500'],
-                ]; @endphp
-                @foreach($gw as $g)
-                <div class="glass card-lift rounded-2xl p-6 text-center">
-                    <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br {{ $g[2] }} flex items-center justify-center text-white text-2xl mb-4 shadow-lg">💳</div>
-                    <p class="text-white font-bold">{{ $g[0] }}</p>
-                    <p class="text-xs text-slate-400 mt-1">{{ $g[1] }}</p>
-                    <span class="inline-block mt-3 text-[11px] px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-semibold">Intégré</span>
-                </div>
-                @endforeach
-            </div>
+            @endforeach
         </div>
 
         {{-- modes de paiement acceptés --}}
@@ -447,21 +463,6 @@
             </div>
         </div>
 
-        {{-- finance feature cards --}}
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-14">
-            @php $finance=[
-                ['🧾','Encaissement &amp; caisse','Guichet caissier dédié, reçus instantanés, rapport de caisse journalier par mode.'],
-                ['📄','Factures &amp; reçus en PDF','Documents générés automatiquement, prêts à imprimer ou à envoyer.'],
-                ['📊','Rapports financiers dynamiques','Revenus, impayés et dépenses en temps réel — exportables PDF &amp; Excel.'],
-            ]; @endphp
-            @foreach($finance as $i => $f)
-            <div class="reveal glass card-lift rounded-2xl p-6" style="transition-delay: {{ $i*60 }}ms">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500/25 to-cyan-500/20 flex items-center justify-center text-2xl mb-4">{!! $f[0] !!}</div>
-                <h3 class="text-white font-bold mb-2">{!! $f[1] !!}</h3>
-                <p class="text-sm text-slate-400 leading-relaxed">{!! $f[2] !!}</p>
-            </div>
-            @endforeach
-        </div>
     </div>
 </section>
 
