@@ -136,6 +136,16 @@
         /* Subtle framed depth so each section reads as its own panel */
         body > section { box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.25); }
 
+        /* ── Mobile responsiveness ── */
+        @media (max-width: 640px) {
+            body > section { padding-top: 3.25rem !important; padding-bottom: 3.25rem !important; }
+            .chapter-num { font-size: 2.25rem; }
+            body > section + section::before { width: 92%; }
+        }
+        @media (max-width: 400px) {
+            body > section { padding-left: 1rem; padding-right: 1rem; }
+        }
+
         [x-cloak] { display: none !important; }
     </style>
 </head>
@@ -410,7 +420,7 @@
         <div id="paiement" class="grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
             {{-- Left focal circle --}}
             <div class="flex justify-center reveal-left">
-                <div class="relative w-72 h-72 sm:w-80 sm:h-80 rounded-full flex flex-col items-center justify-center text-center px-10 shadow-2xl"
+                <div class="relative w-60 h-60 sm:w-72 sm:h-72 lg:w-80 lg:h-80 rounded-full flex flex-col items-center justify-center text-center px-8 sm:px-10 shadow-2xl"
                      style="background: radial-gradient(circle at 50% 35%, rgba(79,70,229,0.38), rgba(6,182,212,0.12) 62%, rgba(255,255,255,0.03)); border:1px solid rgba(129,140,248,0.25);">
                     <span class="absolute inset-0 rounded-full ring-2 ring-indigo-400/20 animate-pulse-ring"></span>
                     <h3 class="relative text-2xl sm:text-3xl font-extrabold text-white leading-tight">Encaissez plus vite,<br>réconciliez sans effort</h3>
@@ -503,7 +513,7 @@
 
         <div id="notifications" class="grid lg:grid-cols-2 gap-16 items-center">
             <div class="reveal-left flex justify-center order-2 lg:order-1">
-                <div class="w-72 rounded-[2.2rem] p-3 glass shadow-2xl">
+                <div class="w-64 sm:w-72 rounded-[2.2rem] p-3 glass shadow-2xl">
                     <div class="rounded-[1.7rem] bg-[#0b141a] p-4 space-y-3 min-h-[420px]">
                         <div class="flex items-center gap-2 pb-3 border-b border-white/5">
                             <span class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold">SA</span>
