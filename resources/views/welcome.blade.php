@@ -525,65 +525,73 @@
             <p class="mt-2 text-slate-400">Chaque utilisateur voit exactement ce dont il a besoin — ni plus, ni moins.</p>
         </div>
 
-        {{-- Hub infographic: central circle with portals branching around it (responsive) --}}
-        @php
-            $portLeft = [
-                ['01','⚙️','from-slate-500 to-indigo-600','Plateforme','Multi-écoles, abonnements &amp; facturation SaaS.'],
-                ['02','🏫','from-indigo-500 to-violet-600','Administration','Direction, comptabilité, académique &amp; paramètres.'],
-                ['03','👨‍🏫','from-blue-500 to-indigo-600','Enseignant','Emploi du temps, présences, évaluations &amp; notes.'],
-                ['04','🧑‍✈️','from-amber-500 to-orange-600','Surveillant','Suivi des présences et de la vie scolaire.'],
-            ];
-            $portRight = [
-                ['05','👪','from-pink-500 to-rose-600','Parent','Notes, présences, factures &amp; paiement en ligne.'],
-                ['06','🎒','from-fuchsia-500 to-purple-600','Élève','Emploi du temps, notes, présences &amp; annonces.'],
-                ['07','🧾','from-cyan-500 to-sky-600','Caissier','Encaissement, reçus PDF &amp; rapport de caisse.'],
-            ];
-        @endphp
+        {{-- Portals arranged around a central hub (radial infographic) --}}
+        @php $portals=[
+            ['01','⚙️','from-slate-500 to-indigo-600','Plateforme','Multi-écoles &amp; facturation SaaS.',56,10],
+            ['02','🏫','from-indigo-500 to-violet-600','Administration','Direction, comptabilité &amp; paramètres.',30,19],
+            ['03','👨‍🏫','from-blue-500 to-indigo-600','Enseignant','Emploi du temps, présences &amp; notes.',17,40],
+            ['04','🧑‍✈️','from-amber-500 to-orange-600','Surveillant','Présences &amp; vie scolaire en direct.',16,50],
+            ['05','👪','from-pink-500 to-rose-600','Parent','Notes, factures &amp; paiement en ligne.',17,60],
+            ['06','🎒','from-fuchsia-500 to-purple-600','Élève','Emploi du temps, notes &amp; annonces.',30,81],
+            ['07','🧾','from-cyan-500 to-sky-600','Caissier','Encaissement, reçus PDF &amp; caisse.',56,90],
+        ]; @endphp
 
-        <div class="grid lg:grid-cols-[1fr_auto_1fr] gap-x-6 gap-y-8 items-center">
-
-            {{-- Left branch --}}
-            <div class="space-y-8 order-2 lg:order-1">
-                @foreach($portLeft as $i => $p)
-                <div class="reveal-left flex items-center gap-4 lg:justify-end" style="transition-delay: {{ $i*80 }}ms">
-                    <div class="order-2 lg:order-1 lg:text-right">
-                        <h3 class="text-white font-bold text-sm sm:text-base">{!! $p[3] !!}</h3>
-                        <p class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">{!! $p[4] !!}</p>
-                    </div>
-                    <span class="hidden lg:block order-2 w-9 border-t border-dashed border-white/20"></span>
-                    <div class="order-1 lg:order-3 relative shrink-0">
-                        <div class="w-16 h-16 rounded-full bg-gradient-to-br {{ $p[2] }} flex items-center justify-center text-2xl shadow-lg ring-4 ring-[#070b18] card-lift">{!! $p[1] !!}</div>
-                        <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-gradient-to-br {{ $p[2] }} text-white text-[10px] font-black shadow">{{ $p[0] }}</span>
-                    </div>
-                </div>
+        {{-- Desktop: true radial layout --}}
+        <div class="hidden lg:block relative mx-auto max-w-4xl h-[600px]">
+            {{-- connector spokes --}}
+            <svg class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                @foreach($portals as $p)
+                <line x1="50" y1="56" x2="{{ $p[6] }}" y2="{{ $p[5] }}" stroke="rgba(129,140,248,0.28)" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>
                 @endforeach
+            </svg>
+
+            {{-- central hub --}}
+            <div class="absolute left-1/2 top-[56%] -translate-x-1/2 -translate-y-1/2 z-20">
+                <span class="absolute inset-0 rounded-full ring-2 ring-indigo-400/25 animate-pulse-ring"></span>
+                <div class="relative w-64 h-64 rounded-full glass flex flex-col items-center justify-center text-center shadow-2xl"
+                     style="background: radial-gradient(circle at 50% 35%, rgba(79,70,229,0.35), rgba(6,182,212,0.10) 62%, rgba(255,255,255,0.03));">
+                    <span class="text-6xl font-black grad-text leading-none">7</span>
+                    <span class="text-white font-extrabold text-lg tracking-wide mt-1">PORTAILS</span>
+                    <span class="text-slate-400 text-xs mt-1">une seule vérité</span>
+                </div>
             </div>
 
-            {{-- Central hub --}}
-            <div class="flex justify-center order-1 lg:order-2 lg:px-2">
+            {{-- portal nodes --}}
+            @foreach($portals as $p)
+            <div class="absolute -translate-x-1/2 -translate-y-1/2 w-36 text-center z-10" style="left: {{ $p[6] }}%; top: {{ $p[5] }}%;">
+                <div class="relative w-16 h-16 mx-auto mb-3">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br {{ $p[2] }} flex items-center justify-center text-2xl shadow-lg ring-4 ring-[#070b18] card-lift">{!! $p[1] !!}</div>
+                    <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-gradient-to-br {{ $p[2] }} text-white text-[10px] font-black shadow">{{ $p[0] }}</span>
+                </div>
+                <h3 class="text-white font-bold text-sm">{!! $p[3] !!}</h3>
+                <p class="text-xs text-slate-400 mt-1 leading-snug">{!! $p[4] !!}</p>
+            </div>
+            @endforeach
+        </div>
+
+        {{-- Mobile / tablet: hub on top + stacked list --}}
+        <div class="lg:hidden">
+            <div class="flex justify-center mb-10 reveal">
                 <div class="relative">
                     <span class="absolute inset-0 rounded-full ring-2 ring-indigo-400/25 animate-pulse-ring"></span>
-                    <div class="relative w-56 h-56 lg:w-64 lg:h-64 rounded-full glass flex flex-col items-center justify-center text-center shadow-2xl"
+                    <div class="relative w-48 h-48 rounded-full glass flex flex-col items-center justify-center text-center shadow-2xl"
                          style="background: radial-gradient(circle at 50% 35%, rgba(79,70,229,0.35), rgba(6,182,212,0.10) 62%, rgba(255,255,255,0.03));">
-                        <span class="text-6xl font-black grad-text leading-none">7</span>
-                        <span class="text-white font-extrabold text-lg tracking-wide mt-1">PORTAILS</span>
+                        <span class="text-5xl font-black grad-text leading-none">7</span>
+                        <span class="text-white font-extrabold text-base mt-1">PORTAILS</span>
                         <span class="text-slate-400 text-xs mt-1">une seule vérité</span>
                     </div>
                 </div>
             </div>
-
-            {{-- Right branch --}}
-            <div class="space-y-8 order-3">
-                @foreach($portRight as $i => $p)
-                <div class="reveal-right flex items-center gap-4" style="transition-delay: {{ $i*80 }}ms">
-                    <div class="order-1 relative shrink-0">
-                        <div class="w-16 h-16 rounded-full bg-gradient-to-br {{ $p[2] }} flex items-center justify-center text-2xl shadow-lg ring-4 ring-[#070b18] card-lift">{!! $p[1] !!}</div>
-                        <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-gradient-to-br {{ $p[2] }} text-white text-[10px] font-black shadow">{{ $p[0] }}</span>
+            <div class="space-y-4 max-w-md mx-auto">
+                @foreach($portals as $p)
+                <div class="reveal flex items-center gap-4 glass rounded-2xl p-4">
+                    <div class="relative shrink-0">
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-br {{ $p[2] }} flex items-center justify-center text-2xl shadow-lg">{!! $p[1] !!}</div>
+                        <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded bg-gradient-to-br {{ $p[2] }} text-white text-[9px] font-black">{{ $p[0] }}</span>
                     </div>
-                    <span class="hidden lg:block order-2 w-9 border-t border-dashed border-white/20"></span>
-                    <div class="order-2 lg:order-3">
-                        <h3 class="text-white font-bold text-sm sm:text-base">{!! $p[3] !!}</h3>
-                        <p class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">{!! $p[4] !!}</p>
+                    <div>
+                        <h3 class="text-white font-bold text-sm">{!! $p[3] !!}</h3>
+                        <p class="text-xs text-slate-400 mt-0.5 leading-snug">{!! $p[4] !!}</p>
                     </div>
                 </div>
                 @endforeach
