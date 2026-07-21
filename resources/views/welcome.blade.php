@@ -643,17 +643,46 @@
             <p class="mt-4 text-slate-400">Un menu pour chaque besoin de l'école — de la maternelle au lycée, de l'inscription à la comptabilité.</p>
         </div>
 
-        <div class="reveal flex flex-wrap justify-center gap-2.5">
+        <div class="reveal flex flex-wrap justify-center gap-2.5 sm:gap-3 max-w-4xl mx-auto">
             @php $modules=[
-                '🎓 Académique','🗂️ Cycles','📚 Niveaux','🏛️ Classes','📘 Matières','🚪 Salles',
-                '👧 Élèves','👪 Responsables','👨‍🏫 Enseignants','📝 Inscriptions',
-                '🗓️ Présences','⏱️ Emploi du temps','🧪 Évaluations','📄 Bulletins',
-                '🧾 Factures','💳 Paiements','📐 Barèmes de frais','💸 Dépenses','📒 Comptabilité',
-                '📢 Annonces','💬 Messagerie','📊 Rapports','⏰ Tâches planifiées',
-                '🏫 Paramètres école','🔐 Utilisateurs & rôles','📱 Facturation D-Money',
+                ['avatar','🎓','Académique','from-indigo-500 to-violet-600'],
+                ['icon','🗂️','Cycles',''],
+                ['icon','📚','Niveaux',''],
+                ['icon','🏛️','Classes',''],
+                ['icon','📘','Matières',''],
+                ['dot','','Salles','amber'],
+                ['solid','👧','Élèves','from-pink-500 to-rose-600'],
+                ['icon','👪','Responsables',''],
+                ['avatar','👨‍🏫','Enseignants','from-blue-500 to-indigo-600'],
+                ['dot','','Inscriptions','emerald'],
+                ['solid','🗓️','Présences','from-amber-500 to-orange-600'],
+                ['icon','⏱️','Emploi du temps',''],
+                ['icon','🧪','Évaluations',''],
+                ['solid','📄','Bulletins','from-violet-500 to-fuchsia-600'],
+                ['icon','🧾','Factures',''],
+                ['solid','💳','Paiements','from-indigo-500 to-cyan-500'],
+                ['icon','📐','Barèmes de frais',''],
+                ['dot','','Dépenses','rose'],
+                ['dot','','Comptabilité','sky'],
+                ['icon','📢','Annonces',''],
+                ['icon','💬','Messagerie',''],
+                ['dot','','Rapports','emerald'],
+                ['dot','','Tâches planifiées','amber'],
+                ['icon','🏫','Paramètres école',''],
+                ['icon','🔐','Utilisateurs &amp; rôles',''],
+                ['solid','📱','Facturation D-Money','from-emerald-500 to-teal-600'],
             ]; @endphp
             @foreach($modules as $m)
-            <span class="glass card-lift rounded-full px-4 py-2 text-sm text-slate-200 whitespace-nowrap">{!! $m !!}</span>
+                @php [$type,$icon,$label,$accent] = $m; @endphp
+                @if($type === 'solid')
+                <span class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white shadow-lg card-lift bg-gradient-to-r {{ $accent }} whitespace-nowrap"><span>{!! $icon !!}</span>{!! $label !!}</span>
+                @elseif($type === 'dot')
+                <span class="inline-flex items-center gap-2 glass card-lift rounded-full px-4 py-2 text-sm text-slate-200 whitespace-nowrap"><span class="w-2 h-2 rounded-full bg-{{ $accent }}-400"></span>{!! $label !!}</span>
+                @elseif($type === 'avatar')
+                <span class="inline-flex items-center gap-2 glass card-lift rounded-full pl-1.5 pr-4 py-1.5 text-sm text-slate-200 whitespace-nowrap"><span class="w-6 h-6 rounded-full bg-gradient-to-br {{ $accent }} flex items-center justify-center text-xs shrink-0">{!! $icon !!}</span>{!! $label !!}</span>
+                @else
+                <span class="inline-flex items-center gap-2 glass card-lift rounded-full px-4 py-2 text-sm text-slate-200 whitespace-nowrap"><span>{!! $icon !!}</span>{!! $label !!}</span>
+                @endif
             @endforeach
         </div>
 
