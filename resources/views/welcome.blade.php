@@ -522,31 +522,72 @@
     <div class="max-w-7xl mx-auto px-5">
         <div class="text-center max-w-2xl mx-auto mb-16 reveal">
             <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Chacun son espace</p>
-            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">7 portails, une seule vérité</h2>
-            <p class="mt-4 text-slate-400">Chaque utilisateur voit exactement ce dont il a besoin — ni plus, ni moins.</p>
+            <p class="mt-2 text-slate-400">Chaque utilisateur voit exactement ce dont il a besoin — ni plus, ni moins.</p>
         </div>
 
-        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            @php $portals=[
-                ['⚙️','Plateforme','Gestion multi-écoles, abonnements &amp; facturation SaaS.','from-slate-500/20 to-indigo-500/20'],
-                ['🏫','Direction / Admin','Contrôle total de l\'école : académique, finance, paramètres.','from-indigo-500/20 to-violet-500/20'],
-                ['💰','Comptable','Facturation, paiements, barèmes, comptabilité complète.','from-emerald-500/20 to-teal-500/20'],
-                ['🧾','Caissier','Encaissement au guichet, reçus PDF, rapport de caisse.','from-cyan-500/20 to-sky-500/20'],
-                ['👨‍🏫','Enseignant','Emploi du temps, présences, évaluations et notes.','from-blue-500/20 to-indigo-500/20'],
-                ['🧑‍✈️','Surveillant','Suivi des présences et de la vie scolaire en direct.','from-amber-500/20 to-orange-500/20'],
-                ['👪','Parent','Notes, présences, factures &amp; paiement en ligne.','from-pink-500/20 to-rose-500/20'],
-                ['🎒','Élève','Emploi du temps, notes, présences et annonces.','from-fuchsia-500/20 to-purple-500/20'],
-            ]; @endphp
-            @foreach($portals as $i => $p)
-            <div class="reveal glass card-lift rounded-2xl p-6 relative overflow-hidden" style="transition-delay: {{ $i*50 }}ms">
-                <div class="absolute -top-10 -right-10 w-28 h-28 rounded-full bg-gradient-to-br {{ $p[3] }} blur-2xl"></div>
+        {{-- Hub infographic: central circle with portals branching around it (responsive) --}}
+        @php
+            $portLeft = [
+                ['01','⚙️','from-slate-500 to-indigo-600','Plateforme','Multi-écoles, abonnements &amp; facturation SaaS.'],
+                ['02','🏫','from-indigo-500 to-violet-600','Administration','Direction, comptabilité, académique &amp; paramètres.'],
+                ['03','👨‍🏫','from-blue-500 to-indigo-600','Enseignant','Emploi du temps, présences, évaluations &amp; notes.'],
+                ['04','🧑‍✈️','from-amber-500 to-orange-600','Surveillant','Suivi des présences et de la vie scolaire.'],
+            ];
+            $portRight = [
+                ['05','👪','from-pink-500 to-rose-600','Parent','Notes, présences, factures &amp; paiement en ligne.'],
+                ['06','🎒','from-fuchsia-500 to-purple-600','Élève','Emploi du temps, notes, présences &amp; annonces.'],
+                ['07','🧾','from-cyan-500 to-sky-600','Caissier','Encaissement, reçus PDF &amp; rapport de caisse.'],
+            ];
+        @endphp
+
+        <div class="grid lg:grid-cols-[1fr_auto_1fr] gap-x-6 gap-y-8 items-center">
+
+            {{-- Left branch --}}
+            <div class="space-y-8 order-2 lg:order-1">
+                @foreach($portLeft as $i => $p)
+                <div class="reveal-left flex items-center gap-4 lg:justify-end" style="transition-delay: {{ $i*80 }}ms">
+                    <div class="order-2 lg:order-1 lg:text-right">
+                        <h3 class="text-white font-bold text-sm sm:text-base">{!! $p[3] !!}</h3>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">{!! $p[4] !!}</p>
+                    </div>
+                    <span class="hidden lg:block order-2 w-9 border-t border-dashed border-white/20"></span>
+                    <div class="order-1 lg:order-3 relative shrink-0">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br {{ $p[2] }} flex items-center justify-center text-2xl shadow-lg ring-4 ring-[#070b18] card-lift">{!! $p[1] !!}</div>
+                        <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-gradient-to-br {{ $p[2] }} text-white text-[10px] font-black shadow">{{ $p[0] }}</span>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+
+            {{-- Central hub --}}
+            <div class="flex justify-center order-1 lg:order-2 lg:px-2">
                 <div class="relative">
-                    <div class="text-3xl mb-3">{!! $p[0] !!}</div>
-                    <h3 class="text-white font-bold mb-1.5">{!! $p[1] !!}</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">{!! $p[2] !!}</p>
+                    <span class="absolute inset-0 rounded-full ring-2 ring-indigo-400/25 animate-pulse-ring"></span>
+                    <div class="relative w-56 h-56 lg:w-64 lg:h-64 rounded-full glass flex flex-col items-center justify-center text-center shadow-2xl"
+                         style="background: radial-gradient(circle at 50% 35%, rgba(79,70,229,0.35), rgba(6,182,212,0.10) 62%, rgba(255,255,255,0.03));">
+                        <span class="text-6xl font-black grad-text leading-none">7</span>
+                        <span class="text-white font-extrabold text-lg tracking-wide mt-1">PORTAILS</span>
+                        <span class="text-slate-400 text-xs mt-1">une seule vérité</span>
+                    </div>
                 </div>
             </div>
-            @endforeach
+
+            {{-- Right branch --}}
+            <div class="space-y-8 order-3">
+                @foreach($portRight as $i => $p)
+                <div class="reveal-right flex items-center gap-4" style="transition-delay: {{ $i*80 }}ms">
+                    <div class="order-1 relative shrink-0">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br {{ $p[2] }} flex items-center justify-center text-2xl shadow-lg ring-4 ring-[#070b18] card-lift">{!! $p[1] !!}</div>
+                        <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-md bg-gradient-to-br {{ $p[2] }} text-white text-[10px] font-black shadow">{{ $p[0] }}</span>
+                    </div>
+                    <span class="hidden lg:block order-2 w-9 border-t border-dashed border-white/20"></span>
+                    <div class="order-2 lg:order-3">
+                        <h3 class="text-white font-bold text-sm sm:text-base">{!! $p[3] !!}</h3>
+                        <p class="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">{!! $p[4] !!}</p>
+                    </div>
+                </div>
+                @endforeach
+            </div>
         </div>
     </div>
 </section>
