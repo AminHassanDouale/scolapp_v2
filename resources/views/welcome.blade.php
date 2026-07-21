@@ -113,6 +113,29 @@
 
         .chapter-num { font-size: 3.25rem; line-height: 1; font-weight: 900; color: transparent; -webkit-text-stroke: 1px rgba(129,140,248,0.35); }
 
+        /* ── Section framing (image-like panels) ── */
+        body > section { position: relative; }
+        /* Auto separator between consecutive sections: gradient line + glowing diamond */
+        body > section + section::before {
+            content: '';
+            position: absolute; top: 0; left: 50%;
+            transform: translateX(-50%);
+            width: min(88%, 1100px); height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(129,140,248,0.30) 30%, rgba(34,211,238,0.35) 50%, rgba(129,140,248,0.30) 70%, transparent);
+            z-index: 5;
+        }
+        body > section + section::after {
+            content: '';
+            position: absolute; top: -5px; left: 50%;
+            transform: translateX(-50%) rotate(45deg);
+            width: 10px; height: 10px; border-radius: 2px;
+            background: linear-gradient(135deg, #6366f1, #22d3ee);
+            box-shadow: 0 0 14px rgba(99,102,241,0.85);
+            z-index: 6;
+        }
+        /* Subtle framed depth so each section reads as its own panel */
+        body > section { box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.25); }
+
         [x-cloak] { display: none !important; }
     </style>
 </head>
