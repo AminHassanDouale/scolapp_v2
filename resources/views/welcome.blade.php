@@ -780,10 +780,11 @@
         <div class="text-center mb-14 reveal">
             <p class="text-sm font-semibold uppercase tracking-widest grad-text mb-3">Questions fréquentes</p>
             <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Tout ce que vous devez savoir</h2>
-            <p class="mt-4 text-slate-400">Les réponses aux questions que se posent les directeurs d'école.</p>
+            <p class="mt-4 text-slate-400">Des réponses rapides à vos questions — pour en savoir plus, contactez-nous.</p>
         </div>
 
-        <div class="space-y-3">
+        {{-- Chat-style FAQ: question bubbles + reply bubbles --}}
+        <div class="space-y-5 max-w-2xl mx-auto">
             @php $faqs=[
                 ['Faut-il installer un logiciel ou du matériel ?','Non. ScolApp est 100% en ligne — accessible depuis n\'importe quel navigateur, ordinateur ou téléphone. Aucune installation, aucune maintenance de votre côté.'],
                 ['Comment les parents paient-ils la scolarité ?','En ligne en un clic (D-Money, Waafi, CAC Pay, Exim Pay) ou au guichet (espèces, virement, chèque, mobile money). Chaque paiement génère un reçu PDF envoyé par Email et WhatsApp.'],
@@ -795,24 +796,30 @@
                 ['Peut-on connecter nos outils existants ?','Oui. ScolApp expose une API REST sécurisée et des webhooks, et s\'intègre aux passerelles de paiement, WhatsApp, email et services tiers à la demande.'],
             ]; @endphp
             @foreach($faqs as $i => $q)
-            <div x-data="{ open: {{ $i === 0 ? 'true' : 'false' }} }"
-                 class="reveal glass rounded-2xl overflow-hidden transition-colors"
-                 :class="open ? 'border-indigo-500/40' : ''">
-                <button type="button" @click="open = !open"
-                        class="w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left">
-                    <span class="text-white font-semibold text-sm sm:text-base">{!! $q[0] !!}</span>
-                    <span class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
-                          :class="open ? 'btn-glow rotate-45' : 'bg-white/8'">
+            <div x-data="{ open: {{ $i === 0 ? 'true' : 'false' }} }" class="reveal">
+                {{-- Question bubble + toggle --}}
+                <div class="flex items-start gap-3">
+                    <button type="button" @click="open = !open"
+                            class="text-left bg-[#171d2e] border border-white/10 rounded-3xl rounded-bl-lg px-5 py-3.5 shadow-lg transition-colors max-w-[85%]"
+                            :class="open ? 'border-indigo-500/40' : 'hover:border-white/25'">
+                        <span class="text-white font-semibold text-sm sm:text-[15px] leading-snug">{!! $q[0] !!}</span>
+                    </button>
+                    <button type="button" @click="open = !open"
+                            class="mt-1.5 w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300"
+                            :class="open ? 'btn-glow rotate-45' : 'bg-white/8 hover:bg-white/15'">
                         <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-width="2.5" d="M12 5v14M5 12h14"/>
                         </svg>
-                    </span>
-                </button>
-                <div x-show="open" x-collapse.duration.300ms
-                     x-transition:enter="transition ease-out duration-300"
-                     x-transition:enter-start="opacity-0 -translate-y-2"
-                     x-transition:enter-end="opacity-100 translate-y-0">
-                    <p class="px-5 sm:px-6 pb-6 -mt-1 text-slate-400 text-sm leading-relaxed">{!! $q[1] !!}</p>
+                    </button>
+                </div>
+                {{-- Answer reply bubble --}}
+                <div x-show="open" x-collapse.duration.300ms class="mt-3">
+                    <div class="flex items-start gap-3 pl-4 sm:pl-6">
+                        <span class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-sm shrink-0 shadow-lg">🎓</span>
+                        <div class="bg-white/[0.06] border border-white/10 rounded-3xl rounded-tl-md px-5 py-4 max-w-[88%]">
+                            <p class="text-slate-300 text-sm leading-relaxed">{!! $q[1] !!}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             @endforeach
