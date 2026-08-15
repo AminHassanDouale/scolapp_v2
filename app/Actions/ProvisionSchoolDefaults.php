@@ -21,6 +21,9 @@ use Illuminate\Support\Str;
  */
 class ProvisionSchoolDefaults
 {
+    /** Standard French class/room size. */
+    private const DEFAULT_CAPACITY = 30;
+
     /** Default cycles & their grades. */
     private array $cycles = [
         ['name' => 'Maternelle', 'code' => 'MAT', 'order' => 1, 'grades' => [
@@ -93,6 +96,7 @@ class ProvisionSchoolDefaults
                     'name'      => $g['name'] . ' A',
                     'code'      => $g['code'] . '-A',
                     'type'      => 'classroom',
+                    'capacity'  => self::DEFAULT_CAPACITY,
                     'is_active' => true,
                 ]);
                 Room::create([
@@ -101,6 +105,7 @@ class ProvisionSchoolDefaults
                     'name'      => $g['name'] . ' B',
                     'code'      => $g['code'] . '-B',
                     'type'      => 'classroom',
+                    'capacity'  => self::DEFAULT_CAPACITY,
                     'is_active' => true,
                 ]);
 
@@ -112,6 +117,7 @@ class ProvisionSchoolDefaults
                     'academic_year_id' => $year->id,
                     'name'             => $g['name'],
                     'room'             => $roomA->name,
+                    'capacity'         => self::DEFAULT_CAPACITY,
                     'is_active'        => true,
                 ]);
             }
