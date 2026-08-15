@@ -4,6 +4,8 @@ namespace App\Actions;
 
 use App\Models\AcademicCycle;
 use App\Models\AcademicYear;
+use App\Models\FeeItem;
+use App\Models\FeeSchedule;
 use App\Models\Grade;
 use App\Models\Room;
 use App\Models\School;
@@ -51,6 +53,36 @@ class ProvisionSchoolDefaults
         ]],
     ];
 
+    /** Standard fee items (barème lines). */
+    private array $feeItemDefs = [
+        ['name' => 'Frais de scolarité',      'code' => 'SCOL',  'type' => 'tuition'],
+        ['name' => "Frais d'inscription",     'code' => 'INSCR', 'type' => 'registration'],
+        ['name' => 'Transport scolaire',      'code' => 'TRANS', 'type' => 'transport'],
+        ['name' => 'Cantine',                 'code' => 'CANT',  'type' => 'other'],
+        ['name' => 'Fournitures scolaires',   'code' => 'FOUR',  'type' => 'other'],
+        ['name' => 'Activités parascolaires', 'code' => 'PARA',  'type' => 'other'],
+        ['name' => 'Assurance scolaire',      'code' => 'ASSU',  'type' => 'other'],
+    ];
+
+    /** Default annual barème amounts (DJF) per grade code. */
+    private array $barems = [
+        'PS'  => ['SCOL' => 40000, 'INSCR' => 8000,  'CANT' => 10000],
+        'MS'  => ['SCOL' => 40000, 'INSCR' => 8000,  'CANT' => 10000],
+        'GS'  => ['SCOL' => 40000, 'INSCR' => 8000,  'CANT' => 10000],
+        'CP'  => ['SCOL' => 45000, 'INSCR' => 8000,  'CANT' => 10000],
+        'CE1' => ['SCOL' => 45000, 'INSCR' => 8000,  'CANT' => 10000],
+        'CE2' => ['SCOL' => 50000, 'INSCR' => 8000,  'CANT' => 10000],
+        'CM1' => ['SCOL' => 50000, 'INSCR' => 8000,  'CANT' => 10000],
+        'CM2' => ['SCOL' => 50000, 'INSCR' => 8000,  'CANT' => 10000],
+        '6E'  => ['SCOL' => 70000, 'INSCR' => 10000, 'TRANS' => 8000, 'CANT' => 12000],
+        '5E'  => ['SCOL' => 70000, 'INSCR' => 10000, 'TRANS' => 8000, 'CANT' => 12000],
+        '4E'  => ['SCOL' => 70000, 'INSCR' => 10000, 'TRANS' => 8000, 'CANT' => 12000],
+        '3E'  => ['SCOL' => 72000, 'INSCR' => 10000, 'TRANS' => 8000, 'CANT' => 12000],
+        '2D'  => ['SCOL' => 90000, 'INSCR' => 12000, 'TRANS' => 8000, 'CANT' => 12000, 'ASSU' => 3000],
+        '1E'  => ['SCOL' => 90000, 'INSCR' => 12000, 'TRANS' => 8000, 'CANT' => 12000, 'ASSU' => 3000],
+        'TLE' => ['SCOL' => 95000, 'INSCR' => 12000, 'TRANS' => 8000, 'CANT' => 12000, 'ASSU' => 3000],
+    ];
+
     public function execute(School $school): AcademicYear
     {
         // ── Academic year (school year straddles Sept → June) ──────────────
@@ -65,6 +97,8 @@ class ProvisionSchoolDefaults
             'is_current' => true,
             'is_active'  => true,
         ]);
+
+        $gradesByCode = [];
 
         foreach ($this->cycles as $cycleData) {
             $grades = $cycleData['grades'];
@@ -88,6 +122,7 @@ class ProvisionSchoolDefaults
                     'order'             => $g['order'],
                     'is_active'         => true,
                 ]);
+                $gradesByCode[$g['code']] = $grade;
 
                 // Two rooms per class: A and B (toggle is_active for selection)
                 $roomA = Room::create([
@@ -123,6 +158,58 @@ class ProvisionSchoolDefaults
             }
         }
 
+        // Default barèmes (fee schedules) per grade
+        $this->provisionFees($school, $year, $gradesByCode);
+
         return $year;
+    }
+
+    /**
+     * Create the standard fee items and one default annual barème per grade.
+     *
+     * @param  array<string, Grade> $gradesByCode
+     */
+    private function provisionFees(School $school, AcademicYear $year, array $gradesByCode): void
+    {
+        // Fee items (idempotent per school)
+        $items = [];
+        foreach ($this->feeItemDefs as $def) {
+            $items[$def['code']] = FeeItem::firstOrCreate(
+                ['school_id' => $school->id, 'code' => $def['code']],
+                [
+                    'uuid'      => (string) Str::uuid(),
+                    'school_id' => $school->id,
+                    'name'      => $def['name'],
+                    'type'      => $def['type'],
+                    'is_active' => true,
+                ]
+            );
+        }
+
+        foreach ($this->barems as $code => $amounts) {
+            $grade = $gradesByCode[$code] ?? null;
+            if (! $grade) {
+                continue;
+            }
+
+            $schedule = FeeSchedule::create([
+                'uuid'             => (string) Str::uuid(),
+                'school_id'        => $school->id,
+                'academic_year_id' => $year->id,
+                'grade_id'         => $grade->id,
+                'name'             => 'Barème ' . $grade->name,
+                'schedule_type'    => 'yearly',
+                'is_default'       => true,
+                'is_active'        => true,
+            ]);
+
+            $sync = [];
+            foreach ($amounts as $itemCode => $amount) {
+                if (isset($items[$itemCode])) {
+                    $sync[$items[$itemCode]->id] = ['amount' => $amount];
+                }
+            }
+            $schedule->feeItems()->sync($sync);
+        }
     }
 }
