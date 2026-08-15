@@ -1,6 +1,19 @@
 <?php
 
 return [
+    // ── Menu labels (admin + platform) ──
+    'rooms'               => 'القاعات',
+    'guardians'           => 'أولياء الأمور',
+    'schools'             => 'المدارس',
+    'plans'               => 'الخطط',
+    'expenses'            => 'المصروفات',
+    'accounting'          => 'المحاسبة',
+    'payment_tracking'    => 'متابعة التحصيلات',
+    'dmoney_transactions' => 'معاملات D-Money',
+    'scheduled_tasks'     => 'المهام المجدولة',
+    'devices'             => 'الأجهزة',
+    'billing_api'         => 'واجهة فوترة D-Money',
+
     'dashboard'      => 'لوحة التحكم',
     'academic'       => 'الشؤون الأكاديمية',
     'students'       => 'الطلاب',

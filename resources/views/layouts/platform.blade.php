@@ -63,14 +63,14 @@
         </div>
 
         <x-menu activate-by-route class="px-2">
-            <x-menu-item title="Tableau de bord"  icon="o-squares-2x2"      link="{{ route('platform.dashboard') }}"      class="text-slate-100 hover:bg-white/10 rounded-lg" />
-            <x-menu-item title="Écoles"           icon="o-building-library" link="{{ route('platform.schools.index') }}"   class="text-slate-100 hover:bg-white/10 rounded-lg" />
-            <x-menu-item title="Utilisateurs"     icon="o-users"            link="{{ route('platform.users.index') }}"     class="text-slate-100 hover:bg-white/10 rounded-lg" />
-            <x-menu-item title="Plans"            icon="o-credit-card"      link="{{ route('platform.plans.index') }}"     class="text-slate-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item :title="__('navigation.dashboard')"  icon="o-squares-2x2"      link="{{ route('platform.dashboard') }}"      class="text-slate-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item :title="__('navigation.schools')"           icon="o-building-library" link="{{ route('platform.schools.index') }}"   class="text-slate-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item :title="__('navigation.users')"     icon="o-users"            link="{{ route('platform.users.index') }}"     class="text-slate-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item :title="__('navigation.plans')"            icon="o-credit-card"      link="{{ route('platform.plans.index') }}"     class="text-slate-100 hover:bg-white/10 rounded-lg" />
             <x-menu-separator />
-            <x-menu-item title="Paramètres"       icon="o-cog-6-tooth"      link="{{ route('platform.settings') }}"        class="text-slate-100 hover:bg-white/10 rounded-lg" />
-            <x-menu-item title="Mon profil"       icon="o-user-circle"      link="{{ route('profile.show') }}"             class="text-slate-100 hover:bg-white/10 rounded-lg" />
-            <x-menu-item title="Déconnexion"      icon="o-arrow-right-start-on-rectangle" link="{{ route('auth.logout') }}" no-wire-navigate class="text-red-300 hover:bg-red-500/20 rounded-lg" />
+            <x-menu-item :title="__('navigation.settings')"       icon="o-cog-6-tooth"      link="{{ route('platform.settings') }}"        class="text-slate-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item :title="__('navigation.profile')"       icon="o-user-circle"      link="{{ route('profile.show') }}"             class="text-slate-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item :title="__('navigation.logout')"      icon="o-arrow-right-start-on-rectangle" link="{{ route('auth.logout') }}" no-wire-navigate class="text-red-300 hover:bg-red-500/20 rounded-lg" />
         </x-menu>
     </x-slot:sidebar>
 

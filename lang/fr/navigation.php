@@ -1,6 +1,19 @@
 <?php
 
 return [
+    // ── Menu labels (admin + platform) ──
+    'rooms'               => 'Salles',
+    'guardians'           => 'Responsables',
+    'schools'             => 'Écoles',
+    'plans'               => 'Plans',
+    'expenses'            => 'Dépenses',
+    'accounting'          => 'Comptabilité',
+    'payment_tracking'    => 'Suivi des encaissements',
+    'dmoney_transactions' => 'Transactions D-Money',
+    'scheduled_tasks'     => 'Tâches planifiées',
+    'devices'             => 'Appareils',
+    'billing_api'         => 'API Facturation D-Money',
+
     'dashboard'      => 'Tableau de bord',
     'academic'       => 'Académique',
     'students'       => 'Élèves',

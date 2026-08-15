@@ -130,6 +130,7 @@ Route::middleware(['auth', 'role:super-admin|admin|director|accountant', 'school
                 Volt::route('/cycles',   'admin.academic.cycles')->name('cycles');
                 Volt::route('/niveaux',  'admin.academic.grades')->name('grades');
                 Volt::route('/classes',  'admin.academic.classes')->name('classes');
+                Volt::route('/salles',   'admin.academic.rooms')->name('rooms');
                 Volt::route('/matieres', 'admin.academic.subjects')->name('subjects');
             });
 

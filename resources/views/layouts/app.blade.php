@@ -84,13 +84,16 @@
                 <x-menu-item :title="__('navigation.students')"     icon="o-user-group"                :link="route('admin.students.index')" />
                 @endcan
                 @can('guardians.view')
-                <x-menu-item title="Responsables"                   icon="o-users"                     :link="route('admin.guardians.index')" />
+                <x-menu-item :title="__('navigation.guardians')"                   icon="o-users"                     :link="route('admin.guardians.index')" />
                 @endcan
                 @can('teachers.view')
                 <x-menu-item :title="__('navigation.teachers')"     icon="o-briefcase"                :link="route('admin.teachers.index')" />
                 @endcan
                 @can('academic.view')
                 <x-menu-item :title="__('navigation.classes')"      icon="o-building-office"           :link="route('admin.academic.classes')" />
+                @endcan
+                @can('academic.view')
+                <x-menu-item :title="__('navigation.rooms')"        icon="o-building-office-2"          :link="route('admin.academic.rooms')" />
                 @endcan
                 @can('enrollments.view')
                 <x-menu-item :title="__('navigation.enrollments')"  icon="o-clipboard-document-check"  :link="route('admin.enrollments.index')" />
@@ -99,7 +102,7 @@
                 <x-menu-item :title="__('navigation.attendance')"   icon="o-calendar-days"             :link="route('admin.attendance.index')" />
                 @endcan
                 @can('timetable.view')
-                <x-menu-item title="Emplois du temps"               icon="o-table-cells"               :link="route('admin.timetable.index')" />
+                <x-menu-item :title="__('navigation.timetables')"               icon="o-table-cells"               :link="route('admin.timetable.index')" />
                 @endcan
                 @can('assessments.view')
                 <x-menu-item :title="__('navigation.assessments')"  icon="o-pencil-square"             :link="route('admin.assessments.index')" />
@@ -118,17 +121,17 @@
                 @endcan
                 @can('payments.view')
                 <x-menu-item :title="__('navigation.payments')"      icon="o-credit-card"              :link="route('admin.finance.payments.index')" />
-                <x-menu-item title="Suivi des encaissements"          icon="o-chart-bar-square"         :link="route('admin.finance.payments.suivi')" />
+                <x-menu-item :title="__('navigation.payment_tracking')"          icon="o-chart-bar-square"         :link="route('admin.finance.payments.suivi')" />
                 @endcan
                 @can('fee-schedules.view')
                 <x-menu-item :title="__('navigation.fee_schedules')" icon="o-table-cells"              :link="route('admin.finance.fee-schedules.index')" />
                 @endcan
                 @can('payments.view')
-                <x-menu-item title="Dépenses"                        icon="o-arrow-trending-down"       :link="route('admin.finance.expenses.index')" />
-                <x-menu-item title="Comptabilité"                    icon="o-calculator"                :link="route('admin.finance.comptabilite.index')" />
+                <x-menu-item :title="__('navigation.expenses')"                        icon="o-arrow-trending-down"       :link="route('admin.finance.expenses.index')" />
+                <x-menu-item :title="__('navigation.accounting')"                    icon="o-calculator"                :link="route('admin.finance.comptabilite.index')" />
                 @endcan
                 @can('billing.view')
-                <x-menu-item title="Transactions D-Money"            icon="o-device-phone-mobile"       :link="route('admin.billing.index')" />
+                <x-menu-item :title="__('navigation.dmoney_transactions')"            icon="o-device-phone-mobile"       :link="route('admin.billing.index')" />
                 @endcan
             </x-menu-sub>
             @endcanany
@@ -152,7 +155,7 @@
 
             {{-- Scheduled Tasks --}}
             @can('scheduled-tasks.view')
-            <x-menu-item title="Tâches planifiées" icon="o-clock" link="{{ route('admin.scheduled-tasks.index') }}" />
+            <x-menu-item :title="__('navigation.scheduled_tasks')" icon="o-clock" link="{{ route('admin.scheduled-tasks.index') }}" />
             @endcan
 
             <x-menu-separator />
@@ -165,13 +168,13 @@
                 @endcan
                 @can('settings.users.view')
                 <x-menu-item :title="__('navigation.users')"  icon="o-users"               :link="route('admin.settings.users')" />
-                <x-menu-item title="Appareils"                 icon="o-device-phone-mobile" :link="route('admin.settings.device-tokens')" />
+                <x-menu-item :title="__('navigation.devices')"                 icon="o-device-phone-mobile" :link="route('admin.settings.device-tokens')" />
                 @endcan
                 @can('settings.roles.view')
                 <x-menu-item :title="__('navigation.roles')"  icon="o-shield-check"        :link="route('admin.settings.roles')" />
                 @endcan
                 @can('billing.manage')
-                <x-menu-item title="API Facturation D-Money"   icon="o-credit-card"         :link="route('admin.settings.billing-api')" />
+                <x-menu-item :title="__('navigation.billing_api')"   icon="o-credit-card"         :link="route('admin.settings.billing-api')" />
                 @endcan
             </x-menu-sub>
             @endcanany
