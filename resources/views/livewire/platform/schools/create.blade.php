@@ -4,6 +4,7 @@ use Livewire\Attributes\Layout;
 use Livewire\WithFileUploads;
 use App\Models\School;
 use App\Models\User;
+use App\Actions\ProvisionSchoolDefaults;
 use Mary\Traits\Toast;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,9 @@ new #[Layout('layouts.platform')] class extends Component {
     public array $users = [
         ['name' => '', 'email' => '', 'password' => '', 'role' => 'admin'],
     ];
+
+    // Auto-create the default academic structure (years, classes, rooms A/B)
+    public bool $provision_defaults = true;
 
     public function addUser(): void
     {
@@ -140,6 +144,11 @@ new #[Layout('layouts.platform')] class extends Component {
                     'timezone'  => $this->timezone,
                 ]);
                 $user->assignRole($u['role']);
+            }
+
+            // Default academic structure: year, cycles, grades, classes, rooms A/B
+            if ($this->provision_defaults) {
+                app(ProvisionSchoolDefaults::class)->execute($school);
             }
 
             return $school;
@@ -277,6 +286,13 @@ new #[Layout('layouts.platform')] class extends Component {
             @endforeach
 
             <x-button label="Ajouter un utilisateur" icon="o-plus" wire:click="addUser" class="btn-outline btn-sm mt-2" />
+        </x-card>
+
+        {{-- Default academic structure --}}
+        <x-card title="Structure par défaut" shadow class="border-0">
+            <x-checkbox wire:model="provision_defaults"
+                        label="Créer automatiquement la structure académique"
+                        hint="Année scolaire courante, cycles (Maternelle → Lycée), une classe par niveau et 2 salles (A/B) par classe — activables/désactivables ensuite pour la sélection." />
         </x-card>
 
         <x-slot:actions>
