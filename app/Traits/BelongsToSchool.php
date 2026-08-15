@@ -21,7 +21,7 @@ trait BelongsToSchool
         return $this->belongsTo(School::class);
     }
 
-    public function scopeForSchool(Builder $query, int $schoolId = null): Builder
+    public function scopeForSchool(Builder $query, ?int $schoolId = null): Builder
     {
         $schoolId ??= auth()->user()?->school_id;
         return $query->where($this->getTable() . '.school_id', $schoolId);
