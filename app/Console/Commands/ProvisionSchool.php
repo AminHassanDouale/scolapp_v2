@@ -23,7 +23,8 @@ class ProvisionSchool extends Command
     protected $signature = 'school:provision
                             {code? : School code or UUID (omit when using --all)}
                             {--all : Provision every school that has no academic structure}
-                            {--force : Provision even if the school already has cycles (may create duplicates)}';
+                            {--force : Provision even if the school already has cycles (may create duplicates)}
+                            {--fees-only : Only add the default barèmes (fee schedules) to existing schools, without touching cycles/classes/rooms}';
 
     protected $description = 'Apply the standard French default structure (year, cycles, grades, classes, rooms A/B) to an existing school';
 
@@ -51,6 +52,18 @@ class ProvisionSchool extends Command
 
         $done = 0;
         foreach ($schools as $school) {
+            // Fees-only mode: add barèmes to an existing school, skip the rest
+            if ($this->option('fees-only')) {
+                try {
+                    $n = DB::transaction(fn () => $action->feesOnly($school));
+                    $this->info("✓ {$school->name} [{$school->code}] — {$n} barème(s) ajouté(s).");
+                    $done++;
+                } catch (\Throwable $e) {
+                    $this->error("✗ {$school->name} [{$school->code}] : " . $e->getMessage());
+                }
+                continue;
+            }
+
             $hasStructure = AcademicCycle::where('school_id', $school->id)->exists();
 
             if ($hasStructure && ! $this->option('force')) {

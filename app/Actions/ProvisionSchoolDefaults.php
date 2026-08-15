@@ -165,6 +165,37 @@ class ProvisionSchoolDefaults
     }
 
     /**
+     * Seed ONLY the default barèmes onto an existing school, using its current
+     * academic year and existing grades — without touching cycles/classes/rooms.
+     * Returns the number of barèmes created.
+     */
+    public function feesOnly(School $school): int
+    {
+        $year = AcademicYear::where('school_id', $school->id)->where('is_current', true)->first()
+            ?? AcademicYear::where('school_id', $school->id)->latest('start_date')->first();
+
+        if (! $year) {
+            $startYear = now()->month >= 7 ? now()->year : now()->year - 1;
+            $year = AcademicYear::create([
+                'uuid'       => (string) Str::uuid(),
+                'school_id'  => $school->id,
+                'name'       => $startYear . '-' . ($startYear + 1),
+                'start_date' => $startYear . '-09-01',
+                'end_date'   => ($startYear + 1) . '-06-30',
+                'is_current' => true,
+                'is_active'  => true,
+            ]);
+        }
+
+        $gradesByCode = Grade::where('school_id', $school->id)->get()->keyBy('code')->all();
+
+        $before = FeeSchedule::where('school_id', $school->id)->count();
+        $this->provisionFees($school, $year, $gradesByCode);
+
+        return FeeSchedule::where('school_id', $school->id)->count() - $before;
+    }
+
+    /**
      * Create the standard fee items and one default annual barème per grade.
      *
      * @param  array<string, Grade> $gradesByCode
@@ -189,6 +220,14 @@ class ProvisionSchoolDefaults
         foreach ($this->barems as $code => $amounts) {
             $grade = $gradesByCode[$code] ?? null;
             if (! $grade) {
+                continue;
+            }
+
+            // Idempotent: skip if a barème already exists for this grade + year
+            if (FeeSchedule::where('school_id', $school->id)
+                ->where('academic_year_id', $year->id)
+                ->where('grade_id', $grade->id)
+                ->exists()) {
                 continue;
             }
 
