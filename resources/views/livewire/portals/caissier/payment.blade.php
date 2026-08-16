@@ -39,6 +39,12 @@ new #[Layout('layouts.caissier')] class extends Component {
     #[Rule('nullable|image|max:5120')]
     public $proofScreenshot = null;
 
+    // Guichet-only: full or partial payment (online gateway always pays full)
+    public string $paymentType = 'full';    // full | partial
+    public string $refNumber   = '';        // n° virement / n° transaction mobile / n° chèque
+    public string $bankName    = '';
+    public string $mmProvider  = 'waafi';   // waafi | cac_pay | d_money
+
     public function mount(?string $invoice = null): void
     {
         if ($invoice) {
@@ -119,6 +125,18 @@ new #[Layout('layouts.caissier')] class extends Component {
     {
         $this->invoice = Invoice::with(['student', 'enrollment'])->find($invoiceId);
         if ($this->invoice) {
+            $this->amount      = max(0, (float) ($this->invoice->balance_due ?? $this->invoice->total));
+            $this->paymentType = 'full';
+            $this->refNumber   = '';
+            $this->bankName    = '';
+            $this->mmProvider  = 'waafi';
+        }
+    }
+
+    public function updatedPaymentType(): void
+    {
+        // "Total" locks the amount to the full remaining balance
+        if ($this->paymentType === 'full' && $this->invoice) {
             $this->amount = max(0, (float) ($this->invoice->balance_due ?? $this->invoice->total));
         }
     }
@@ -126,6 +144,16 @@ new #[Layout('layouts.caissier')] class extends Component {
     public function save(): void
     {
         $this->validate();
+
+        // Method-specific reference validation
+        if ($this->paymentMethod === 'bank_transfer') {
+            $this->validate(['refNumber' => 'required|string|max:100'], [], ['refNumber' => 'numéro de virement']);
+        } elseif ($this->paymentMethod === 'mobile_money') {
+            $this->validate([
+                'mmProvider' => 'required|in:waafi,cac_pay,d_money',
+                'refNumber'  => 'required|string|max:100',
+            ], [], ['refNumber' => 'numéro de transaction', 'mmProvider' => 'opérateur']);
+        }
 
         if (! $this->invoice) {
             $this->error('Sélectionnez une facture.', position: 'toast-top toast-center', timeout: 3000);
@@ -149,19 +177,28 @@ new #[Layout('layouts.caissier')] class extends Component {
         }
 
         DB::transaction(function () use ($screenshotPath) {
+            $meta = array_filter([
+                'proof_screenshot' => $screenshotPath,
+                'provider'         => $this->paymentMethod === 'mobile_money' ? $this->mmProvider : null,
+                'phone'            => $this->paymentMethod === 'mobile_money' ? ($this->refNumber ?: null) : null,
+            ]);
+
             $payment = Payment::create([
-                'uuid'           => (string) Str::uuid(),
-                'reference'      => Payment::generateReference(),
-                'school_id'      => auth()->user()->school_id,
-                'student_id'     => $this->invoice->student_id,
-                'enrollment_id'  => $this->invoice->enrollment_id,
-                'received_by'    => auth()->id(),
-                'amount'         => $this->amount,
-                'payment_method' => $this->paymentMethod,
-                'payment_date'   => today(),
-                'notes'          => $this->notes ?: null,
-                'status'         => 'confirmed',
-                'meta'           => $screenshotPath ? ['proof_screenshot' => $screenshotPath] : null,
+                'uuid'            => (string) Str::uuid(),
+                'reference'       => Payment::generateReference(),
+                'school_id'       => auth()->user()->school_id,
+                'student_id'      => $this->invoice->student_id,
+                'enrollment_id'   => $this->invoice->enrollment_id,
+                'received_by'     => auth()->id(),
+                'amount'          => $this->amount,
+                'payment_method'  => $this->paymentMethod,
+                'payment_date'    => today(),
+                'transaction_ref' => in_array($this->paymentMethod, ['bank_transfer', 'mobile_money'], true) ? ($this->refNumber ?: null) : null,
+                'bank_name'       => $this->paymentMethod === 'bank_transfer' ? ($this->bankName ?: null) : null,
+                'check_number'    => $this->paymentMethod === 'check' ? ($this->refNumber ?: null) : null,
+                'notes'           => $this->notes ?: null,
+                'status'          => 'confirmed',
+                'meta'            => $meta ?: null,
             ]);
 
             PaymentAllocation::create([
@@ -280,21 +317,51 @@ new #[Layout('layouts.caissier')] class extends Component {
             </div>
 
             <x-form wire:submit="save">
-                <x-input type="number"
-                    label="Montant encaissé (DJF)"
-                    wire:model="amount"
-                    placeholder="Montant"
-                    step="1" min="1"
-                    :max="$balance" />
+                {{-- Total vs partial (guichet only) --}}
+                <div class="mb-3">
+                    <label class="text-sm font-semibold block mb-1.5">Type de paiement</label>
+                    <div class="join">
+                        <button type="button" wire:click="$set('paymentType','full')"
+                            class="join-item btn btn-sm {{ $paymentType === 'full' ? 'btn-primary' : 'btn-ghost' }}">Paiement total</button>
+                        <button type="button" wire:click="$set('paymentType','partial')"
+                            class="join-item btn btn-sm {{ $paymentType === 'partial' ? 'btn-primary' : 'btn-ghost' }}">Paiement partiel</button>
+                    </div>
+                    @if($paymentType === 'partial')
+                    <p class="text-xs text-amber-600 mt-1">Le solde restant pourra être réglé plus tard au guichet.</p>
+                    @endif
+                </div>
 
-                <x-select label="Mode de paiement" wire:model="paymentMethod" :options="[
+                <x-input type="number" label="Montant encaissé (DJF)" wire:model.live="amount"
+                    placeholder="Montant" step="1" min="1" :max="$balance"
+                    @readonly($paymentType === 'full') />
+
+                <x-select label="Mode de paiement" wire:model.live="paymentMethod" :options="[
                     ['id' => 'cash',          'name' => 'Espèces'],
                     ['id' => 'bank_transfer', 'name' => 'Virement bancaire'],
                     ['id' => 'check',         'name' => 'Chèque'],
                     ['id' => 'mobile_money',  'name' => 'Mobile Money'],
                 ]" />
 
-                <x-textarea label="Notes (facultatif)" wire:model="notes" rows="2" placeholder="Remarques, numéro de chèque..." />
+                {{-- Method-specific reference fields --}}
+                @if($paymentMethod === 'bank_transfer')
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <x-input label="N° de virement *" wire:model="refNumber" placeholder="Référence du virement" icon="o-hashtag" />
+                    <x-input label="Banque" wire:model="bankName" placeholder="Nom de la banque" />
+                </div>
+                @elseif($paymentMethod === 'mobile_money')
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <x-select label="Opérateur *" wire:model="mmProvider" :options="[
+                        ['id' => 'waafi',   'name' => 'Waafi'],
+                        ['id' => 'cac_pay', 'name' => 'CAC Pay'],
+                        ['id' => 'd_money', 'name' => 'D-Money'],
+                    ]" />
+                    <x-input label="N° de transaction / téléphone *" wire:model="refNumber" placeholder="Ex : 77xx xx xx" icon="o-device-phone-mobile" />
+                </div>
+                @elseif($paymentMethod === 'check')
+                <x-input label="N° de chèque" wire:model="refNumber" placeholder="Numéro du chèque" icon="o-hashtag" />
+                @endif
+
+                <x-textarea label="Notes (facultatif)" wire:model="notes" rows="2" placeholder="Remarques..." />
 
                 {{-- Screenshot upload --}}
                 <div>
