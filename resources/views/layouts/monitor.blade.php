@@ -72,6 +72,7 @@
 
         <x-menu activate-by-route class="px-2">
             <x-menu-item title="{{ __('navigation.dashboard') }}"  icon="o-squares-2x2"   link="{{ route('monitor.dashboard') }}"  class="text-amber-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item title="{{ __('navigation.mark_attendance') }}" icon="o-check-circle" link="{{ route('monitor.mark') }}" class="text-amber-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.attendance') }}" icon="o-calendar-days" link="{{ route('monitor.attendance') }}" class="text-amber-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.students') }}"   icon="o-user-group"    link="{{ route('monitor.students') }}"   class="text-amber-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.schedule') }}"   icon="o-clock"         link="{{ route('monitor.schedule') }}"   class="text-amber-100 hover:bg-white/10 rounded-lg" />

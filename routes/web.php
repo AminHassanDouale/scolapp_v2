@@ -326,6 +326,7 @@ Route::middleware(['auth', 'role:monitor|super-admin|admin', 'school.active'])
     ->prefix('monitor')->name('monitor.')
     ->group(function () {
         Volt::route('/',          'portals.monitor.dashboard')->name('dashboard');
+        Volt::route('/saisie',    'portals.monitor.mark')->name('mark');
         Volt::route('/presences', 'portals.monitor.attendance')->name('attendance');
         Volt::route('/eleves',    'portals.monitor.students')->name('students');
         Volt::route('/planning',  'portals.monitor.schedule')->name('schedule');
