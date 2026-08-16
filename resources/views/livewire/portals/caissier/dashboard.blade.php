@@ -32,7 +32,30 @@ new #[Layout('layouts.caissier')] class extends Component {
             ->whereYear('payment_date', $today->year)
             ->sum('amount');
 
-        return compact('todayPayments', 'todayCount', 'pendingInvoices', 'overdueInvoices', 'recentPayments', 'monthlyTotal');
+        // 7-day encaissements trend
+        $rows = Payment::where('school_id', $schoolId)
+            ->whereBetween('payment_date', [$today->copy()->subDays(6)->toDateString(), $today->toDateString()])
+            ->selectRaw('DATE(payment_date) as d, SUM(amount) as total')
+            ->groupBy('d')->pluck('total', 'd');
+        $trendLabels = []; $trendData = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $day = $today->copy()->subDays($i);
+            $trendLabels[] = $day->translatedFormat('D d');
+            $trendData[]   = (float) ($rows[$day->toDateString()] ?? 0);
+        }
+        $trendChart = [
+            'type' => 'bar',
+            'data' => ['labels' => $trendLabels, 'datasets' => [[
+                'label' => 'Encaissé (DJF)', 'data' => $trendData,
+                'backgroundColor' => '#06b6d4', 'borderRadius' => 6,
+            ]]],
+            'options' => ['responsive' => true, 'maintainAspectRatio' => false,
+                'plugins' => ['legend' => ['display' => false]],
+                'scales' => ['y' => ['beginAtZero' => true]]],
+        ];
+
+        return compact('todayPayments', 'todayCount', 'pendingInvoices', 'overdueInvoices', 'recentPayments', 'monthlyTotal', 'trendChart')
+            + ['hasTrend' => array_sum($trendData) > 0];
     }
 };
 ?>
@@ -117,6 +140,17 @@ new #[Layout('layouts.caissier')] class extends Component {
                     <x-button label="Voir le rapport" icon="o-chart-bar-square" class="btn-sm btn-white text-cyan-700" />
                 </a>
             </div>
+        </div>
+    </x-card>
+
+    {{-- 7-day encaissements trend --}}
+    <x-card title="Encaissements — 7 derniers jours" shadow separator>
+        <div class="h-56" wire:key="caissier-trend">
+            @if($hasTrend)
+            <canvas x-data x-init="new Chart($el, @js($trendChart))"></canvas>
+            @else
+            <div class="h-full flex items-center justify-center text-base-content/40 text-sm">Aucun encaissement cette semaine.</div>
+            @endif
         </div>
     </x-card>
 
