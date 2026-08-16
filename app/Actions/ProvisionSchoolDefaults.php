@@ -85,14 +85,14 @@ class ProvisionSchoolDefaults
 
     public function execute(School $school): AcademicYear
     {
-        // ── Academic year (school year straddles Sept → June) ──────────────
+        // ── Academic year (school year runs August → June) ─────────────────
         $startYear = now()->month >= 7 ? now()->year : now()->year - 1;
 
         $year = AcademicYear::create([
             'uuid'       => (string) Str::uuid(),
             'school_id'  => $school->id,
             'name'       => $startYear . '-' . ($startYear + 1),
-            'start_date' => $startYear . '-09-01',
+            'start_date' => $startYear . '-08-01',
             'end_date'   => ($startYear + 1) . '-06-30',
             'is_current' => true,
             'is_active'  => true,
@@ -180,7 +180,7 @@ class ProvisionSchoolDefaults
                 'uuid'       => (string) Str::uuid(),
                 'school_id'  => $school->id,
                 'name'       => $startYear . '-' . ($startYear + 1),
-                'start_date' => $startYear . '-09-01',
+                'start_date' => $startYear . '-08-01',
                 'end_date'   => ($startYear + 1) . '-06-30',
                 'is_current' => true,
                 'is_active'  => true,
