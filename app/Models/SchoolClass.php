@@ -69,6 +69,19 @@ class SchoolClass extends Model
         return $this->hasMany(Enrollment::class);
     }
 
+    /** Students enrolled in this class (through enrollments). */
+    public function students(): \Illuminate\Database\Eloquent\Relations\HasManyThrough
+    {
+        return $this->hasManyThrough(
+            Student::class,
+            Enrollment::class,
+            'school_class_id', // FK on enrollments -> school_classes
+            'id',              // PK on students
+            'id',              // PK on school_classes
+            'student_id',      // FK on enrollments -> students
+        );
+    }
+
     public function attendanceSessions(): HasMany
     {
         return $this->hasMany(AttendanceSession::class);
