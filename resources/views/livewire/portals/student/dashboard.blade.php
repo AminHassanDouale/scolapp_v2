@@ -35,8 +35,13 @@ new #[Layout('layouts.student')] class extends Component {
                 ->value('avg_pct')
             : null;
 
+        $classIds = $student
+            ? \App\Models\Enrollment::where('student_id', $student->id)
+                ->where('status', 'confirmed')->pluck('school_class_id')->filter()->unique()->values()->all()
+            : [];
         $announcements = Announcement::where('school_id', $user->school_id)
-            ->where('is_published', true)
+            ->publishedNow()
+            ->forAudience('students', $classIds)
             ->orderByDesc('published_at')
             ->limit(4)
             ->get();

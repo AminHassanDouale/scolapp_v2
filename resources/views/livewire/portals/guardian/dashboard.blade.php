@@ -21,8 +21,13 @@ new #[Layout('layouts.guardian')] class extends Component {
             ->whereIn('status', [InvoiceStatus::ISSUED->value, InvoiceStatus::OVERDUE->value, InvoiceStatus::PARTIALLY_PAID->value])
             ->count();
 
+        $classIds = $students->isNotEmpty()
+            ? \App\Models\Enrollment::whereIn('student_id', $students->pluck('id'))
+                ->where('status', 'confirmed')->pluck('school_class_id')->filter()->unique()->values()->all()
+            : [];
         $recentAnnouncements = Announcement::where('school_id', $user->school_id)
-            ->where('is_published', true)
+            ->publishedNow()
+            ->forAudience('guardians', $classIds)
             ->orderByDesc('published_at')
             ->limit(5)
             ->get();

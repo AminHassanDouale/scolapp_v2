@@ -135,8 +135,8 @@ new #[Layout('layouts.app')] class extends Component {
                         <div class="flex items-center gap-4 mt-2 text-xs text-base-content/50">
                             <span>{{ $announcement->createdBy?->name ?? 'Système' }}</span>
                             <span>{{ $announcement->created_at->diffForHumans() }}</span>
-                            @if($announcement->target_audience && $announcement->target_audience !== 'all')
-                            <span class="badge badge-outline badge-xs">{{ $announcement->target_audience }}</span>
+                            @if($announcement->audienceLabel() !== 'Tous')
+                            <span class="badge badge-outline badge-xs">{{ $announcement->audienceLabel() }}</span>
                             @endif
                             @if($announcement->expires_at && !$isExpired)
                             <span>Expire {{ $announcement->expires_at->diffForHumans() }}</span>

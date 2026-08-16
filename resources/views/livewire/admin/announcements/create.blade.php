@@ -31,13 +31,21 @@ new #[Layout('layouts.app')] class extends Component {
             'title'           => $this->title,
             'body'            => $this->body,
             'level'           => $this->level,
-            'target_audience' => $this->targetAudience,
-            'target_class_ids'=> $this->targetAudience === 'class' ? $this->targetClassIds : null,
-            'publish_at'      => $this->publishAt ?: null,
+            'target_audience' => [
+                'type'      => $this->targetAudience,
+                'class_ids' => $this->targetAudience === 'class'
+                    ? array_values(array_map('intval', $this->targetClassIds))
+                    : [],
+            ],
+            'is_published'    => true,
+            'published_at'    => $this->publishAt ?: now(),
             'expires_at'      => $this->expiresAt ?: null,
         ]);
 
-        $this->success('Annonce publiée.', position: 'toast-top toast-end', icon: 'o-paper-airplane', css: 'alert-success', timeout: 3000);
+        $msg = $this->publishAt && $this->publishAt > now()->toDateTimeString()
+            ? 'Annonce programmée.'
+            : 'Annonce publiée.';
+        $this->success($msg, position: 'toast-top toast-end', icon: 'o-paper-airplane', css: 'alert-success', timeout: 3000);
         $this->redirect(route('admin.announcements.index'), navigate: true);
     }
 

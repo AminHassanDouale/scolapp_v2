@@ -9,8 +9,15 @@ new #[Layout('layouts.guardian')] class extends Component {
 
     public function with(): array
     {
+        $guardian = \App\Models\Guardian::where('user_id', auth()->id())->with('students')->first();
+        $classIds = $guardian
+            ? \App\Models\Enrollment::whereIn('student_id', $guardian->students->pluck('id'))
+                ->where('status', 'confirmed')->pluck('school_class_id')->filter()->unique()->values()->all()
+            : [];
+
         $announcements = Announcement::where('school_id', auth()->user()->school_id)
-            ->where('is_published', true)
+            ->publishedNow()
+            ->forAudience('guardians', $classIds)
             ->orderByDesc('published_at')
             ->paginate(15);
 
@@ -41,8 +48,8 @@ new #[Layout('layouts.guardian')] class extends Component {
                     @if($ann->content)
                     <p class="text-sm text-base-content/70 mt-2 leading-relaxed">{{ Str::limit($ann->content, 200) }}</p>
                     @endif
-                    @if($ann->target_audience ?? null)
-                    <x-badge :value="$ann->target_audience" class="badge-ghost badge-xs mt-2" />
+                    @if($ann->audienceLabel() !== 'Tous')
+                    <x-badge :value="$ann->audienceLabel()" class="badge-ghost badge-xs mt-2" />
                     @endif
                 </div>
             </div>

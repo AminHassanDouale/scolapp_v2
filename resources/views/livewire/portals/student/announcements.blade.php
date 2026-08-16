@@ -9,8 +9,15 @@ new #[Layout('layouts.student')] class extends Component {
 
     public function with(): array
     {
+        $student  = \App\Models\Student::where('user_id', auth()->id())->first();
+        $classIds = $student
+            ? \App\Models\Enrollment::where('student_id', $student->id)
+                ->where('status', 'confirmed')->pluck('school_class_id')->filter()->unique()->values()->all()
+            : [];
+
         $announcements = Announcement::where('school_id', auth()->user()->school_id)
-            ->where('is_published', true)
+            ->publishedNow()
+            ->forAudience('students', $classIds)
             ->orderByDesc('published_at')
             ->paginate(15);
 
