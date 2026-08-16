@@ -122,7 +122,7 @@ new #[Layout('layouts.guardian')] class extends Component {
                                 {{ $savg !== null ? number_format($savg, 2) : '—' }}
                             </td>
                             <td class="py-2 text-center text-base-content/60">{{ $sg->rank ?? '—' }}</td>
-                            <td class="py-2 text-base-content/60 text-xs hidden sm:table-cell">{{ $sg->teacher_comment ?? $sg->mention }}</td>
+                            <td class="py-2 text-base-content/60 text-xs hidden sm:table-cell">{{ $sg->comment }}</td>
                         </tr>
                         @endforeach
                     </tbody>

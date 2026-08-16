@@ -132,14 +132,14 @@ class SeedSchoolAcademics extends Command
                     $coef     = (float) ($subject->default_coefficient ?? 1);
                     $weighted = round($avg * $coef, 2);
                     ReportCardSubject::create([
-                        'report_card_id'   => $rc->id,
-                        'subject_id'       => $subject->id,
-                        'average'          => $avg,
-                        'coefficient'      => $coef,
-                        'weighted_average' => $weighted,
-                        'rank'             => mt_rand(1, max(1, $classSize)),
-                        'absences'         => mt_rand(0, 3),
-                        'mention'          => $this->mention($avg),
+                        'report_card_id' => $rc->id,
+                        'subject_id'     => $subject->id,
+                        'average'        => $avg,
+                        'coefficient'    => $coef,
+                        'weighted_avg'   => $weighted,
+                        'class_avg'      => round(mt_rand(90, 150) / 10, 2),
+                        'rank'           => mt_rand(1, max(1, $classSize)),
+                        'comment'        => $this->mention($avg),
                     ]);
                     $total += $weighted; $coefSum += $coef;
                 }

@@ -15,11 +15,10 @@ class ReportCardSubject extends Model
         'subject_id',
         'average',
         'coefficient',
-        'weighted_average',
+        'weighted_avg',
+        'class_avg',
         'rank',
-        'absences',
-        'teacher_comment',
-        'mention',
+        'comment',
     ];
 
     protected function casts(): array
