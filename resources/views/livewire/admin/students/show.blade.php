@@ -118,6 +118,19 @@ new #[Layout('layouts.app')] class extends Component {
                 ->get(),
             'invoices' => $this->student->invoices,
             'payments' => $this->student->payments,
+            'invoicesByYear' => $this->student->invoices()
+                ->with('academicYear')
+                ->get()
+                ->groupBy('academic_year_id')
+                ->map(fn ($invs) => (object) [
+                    'year'     => $invs->first()->academicYear,
+                    'total'    => (float) $invs->sum('total'),
+                    'paid'     => (float) $invs->sum('paid_total'),
+                    'balance'  => (float) $invs->sum('balance_due'),
+                    'invoices' => $invs->sortByDesc('issue_date'),
+                ])
+                ->sortByDesc(fn ($g) => optional($g->year)->start_date)
+                ->values(),
         ];
     }
 };
@@ -331,25 +344,52 @@ new #[Layout('layouts.app')] class extends Component {
         </x-tab>
 
         <x-tab name="finance" label="Finance" icon="o-banknotes">
-            <div class="mt-4 space-y-4">
-                <h3 class="font-bold text-lg">Factures récentes</h3>
-                @forelse($invoices as $invoice)
-                <div class="flex items-center justify-between p-4 bg-base-100 rounded-xl border border-base-200">
-                    <div>
-                        <p class="font-mono font-bold text-sm">{{ $invoice->reference }}</p>
-                        <p class="text-xs text-base-content/60">{{ $invoice->invoice_type->label() }} — Échéance: {{ $invoice->due_date?->format('d/m/Y') }}</p>
+            <div class="mt-4 space-y-6">
+                <h3 class="font-bold text-lg">Factures par année scolaire</h3>
+
+                @forelse($invoicesByYear as $group)
+                @php $pct = $group->total > 0 ? min(100, round($group->paid / $group->total * 100)) : 100; @endphp
+                <x-card class="border border-base-200">
+                    {{-- Year header + totals --}}
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                        <div class="flex items-center gap-2">
+                            <x-icon name="o-calendar-days" class="w-5 h-5 text-primary" />
+                            <span class="font-bold">{{ $group->year?->name ?? 'Sans année scolaire' }}</span>
+                            @if($group->year?->is_current)
+                            <x-badge value="Courante" class="badge-primary badge-sm" />
+                            @endif
+                        </div>
+                        <div class="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+                            <span>Total : <b>{{ number_format($group->total) }} DJF</b></span>
+                            <span class="text-green-600">Payé : <b>{{ number_format($group->paid) }} DJF</b></span>
+                            <span class="{{ $group->balance > 0 ? 'text-orange-600' : 'text-green-600' }}">Reste : <b>{{ number_format($group->balance) }} DJF</b></span>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <p class="font-bold">{{ number_format($invoice->total) }} DJF</p>
-                        <p class="text-xs {{ $invoice->balance_due > 0 ? 'text-orange-600' : 'text-green-600' }}">
-                            Solde: {{ number_format($invoice->balance_due) }} DJF
-                        </p>
+
+                    {{-- Payment progress --}}
+                    <div class="w-full h-2 rounded-full bg-base-200 overflow-hidden mb-4">
+                        <div class="h-2 rounded-full {{ $group->balance > 0 ? 'bg-amber-500' : 'bg-green-500' }}" style="width: {{ $pct }}%"></div>
                     </div>
-                    <a href="{{ route('admin.finance.invoices.show', $invoice->uuid) }}" wire:navigate
-                       class="btn btn-ghost btn-xs ml-2">
-                        <x-icon name="o-eye" class="w-3.5 h-3.5"/>
-                    </a>
-                </div>
+
+                    {{-- Invoices for this year --}}
+                    <div class="space-y-2">
+                        @foreach($group->invoices as $invoice)
+                        <div class="flex items-center justify-between p-3 bg-base-100 rounded-lg border border-base-200">
+                            <div>
+                                <p class="font-mono font-bold text-sm">{{ $invoice->reference }}</p>
+                                <p class="text-xs text-base-content/60">{{ $invoice->invoice_type->label() }} — Échéance : {{ $invoice->due_date?->format('d/m/Y') }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-sm">{{ number_format($invoice->total) }} DJF</p>
+                                <p class="text-xs {{ $invoice->balance_due > 0 ? 'text-orange-600' : 'text-green-600' }}">Solde : {{ number_format($invoice->balance_due) }} DJF</p>
+                            </div>
+                            <a href="{{ route('admin.finance.invoices.show', $invoice->uuid) }}" wire:navigate class="btn btn-ghost btn-xs ml-2">
+                                <x-icon name="o-eye" class="w-3.5 h-3.5"/>
+                            </a>
+                        </div>
+                        @endforeach
+                    </div>
+                </x-card>
                 @empty
                 <x-alert icon="o-information-circle" class="alert-info">Aucune facture.</x-alert>
                 @endforelse

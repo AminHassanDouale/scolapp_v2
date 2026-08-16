@@ -83,6 +83,7 @@ new #[Layout('layouts.app')] class extends Component {
             $waText = "✅ *Paiement reçu* — " . ($payment->school?->name ?? config('app.name')) . "\n"
                 . "Référence : {$payment->reference}\n"
                 . "Montant : " . number_format((float) $payment->amount, 0, ',', ' ') . " DJF\n"
+                . "Reste à payer (année scolaire) : " . number_format($payment->academicYearBalance(), 0, ',', ' ') . " DJF\n"
                 . "Merci.";
             $student->guardians->each(fn($g) => app(\App\Services\WhatsAppService::class)->notifyModel($g, $waText));
         }

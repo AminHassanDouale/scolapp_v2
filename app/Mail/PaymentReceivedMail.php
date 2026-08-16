@@ -33,8 +33,9 @@ class PaymentReceivedMail extends Mailable
         return new Content(
             markdown: 'emails.payment.received',
             with: [
-                'payment'  => $this->payment,
-                'guardian' => $this->guardian,
+                'payment'     => $this->payment,
+                'guardian'    => $this->guardian,
+                'yearBalance' => $this->payment->academicYearBalance(),
             ],
         );
     }

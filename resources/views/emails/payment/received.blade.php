@@ -46,6 +46,16 @@ Nous vous confirmons la réception du paiement suivant pour votre enfant **{{ $p
 @endforeach
 </x-mail::table>
 
+---
+
+## Solde de l'année scolaire
+
+@if($yearBalance > 0)
+Il reste **{{ number_format((int) $yearBalance, 0, ',', ' ') }} DJF** à régler pour l'année scolaire en cours.
+@else
+✅ La scolarité de l'année en cours est **entièrement réglée**. Merci !
+@endif
+
 @if($payment->notes)
 > **Note :** {{ $payment->notes }}
 @endif

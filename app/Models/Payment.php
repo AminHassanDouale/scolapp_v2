@@ -78,4 +78,34 @@ class Payment extends Model
             ->withPivot('amount')
             ->withTimestamps();
     }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+
+    /**
+     * The academic year this payment relates to (via the first settled invoice).
+     */
+    public function relatedAcademicYearId(): ?int
+    {
+        $invoice = $this->relationLoaded('paymentAllocations')
+            ? $this->paymentAllocations->first()?->invoice
+            : $this->paymentAllocations()->with('invoice')->first()?->invoice;
+
+        return $invoice?->academic_year_id;
+    }
+
+    /**
+     * Total amount the student still owes for the payment's academic year
+     * (sum of balance_due across all their invoices for that year).
+     */
+    public function academicYearBalance(): float
+    {
+        $yearId = $this->relatedAcademicYearId();
+        if (! $yearId || ! $this->student_id) {
+            return 0.0;
+        }
+
+        return (float) Invoice::where('student_id', $this->student_id)
+            ->where('academic_year_id', $yearId)
+            ->sum('balance_due');
+    }
 }

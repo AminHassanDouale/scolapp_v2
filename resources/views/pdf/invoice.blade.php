@@ -80,9 +80,22 @@
 @endif
 
 {{-- Header --}}
+@php
+    $__school = $invoice->school;
+    $__logoSrc = null;
+    if ($__school?->logo && \Illuminate\Support\Facades\Storage::disk('public')->exists($__school->logo)) {
+        try {
+            $__logoSrc = 'data:' . \Illuminate\Support\Facades\Storage::disk('public')->mimeType($__school->logo)
+                . ';base64,' . base64_encode(\Illuminate\Support\Facades\Storage::disk('public')->get($__school->logo));
+        } catch (\Throwable $e) { $__logoSrc = null; }
+    }
+@endphp
 <div class="header">
     <div class="header-inner">
         <div class="header-left">
+            @if($__logoSrc)
+            <img src="{{ $__logoSrc }}" alt="" style="height:46px; max-width:180px; margin-bottom:8px;">
+            @endif
             <div class="school-name">{{ $invoice->school->name }}</div>
             @if($invoice->school->address)
             <div class="school-meta">{{ $invoice->school->address }}@if($invoice->school->city), {{ $invoice->school->city }}@endif</div>

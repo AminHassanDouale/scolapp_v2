@@ -65,10 +65,18 @@ class PaymentConfirmedNotification extends Notification implements ShouldQueue
             $lines[] = "• Facture : *{$invoice->reference}*";
             $remaining = $invoice->fresh()->balance_due ?? 0;
             if ($remaining > 0) {
-                $lines[] = "• Reste dû : *" . number_format($remaining, 0, ',', ' ') . " DJF*";
+                $lines[] = "• Reste dû sur la facture : *" . number_format($remaining, 0, ',', ' ') . " DJF*";
             } else {
-                $lines[] = "• Solde : *Entièrement payé ✅*";
+                $lines[] = "• Solde de la facture : *Entièrement payée ✅*";
             }
+        }
+
+        // Remaining to pay for the whole academic year
+        $yearBalance = $payment->academicYearBalance();
+        if ($yearBalance > 0) {
+            $lines[] = "• Reste à payer (année scolaire) : *" . number_format($yearBalance, 0, ',', ' ') . " DJF*";
+        } else {
+            $lines[] = "• Année scolaire : *Entièrement soldée ✅*";
         }
 
         $lines[] = "";

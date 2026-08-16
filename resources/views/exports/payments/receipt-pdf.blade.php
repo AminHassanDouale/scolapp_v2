@@ -105,9 +105,16 @@
 @endif
 
 {{-- Header --}}
+@php
+    $__logoSrc = null;
+    if ($school?->logo && \Illuminate\Support\Facades\Storage::disk('public')->exists($school->logo)) {
+        try { $__logoSrc = 'data:' . \Illuminate\Support\Facades\Storage::disk('public')->mimeType($school->logo) . ';base64,' . base64_encode(\Illuminate\Support\Facades\Storage::disk('public')->get($school->logo)); } catch (\Throwable $e) {}
+    }
+@endphp
 <div class="header">
     <div class="header-flex">
         <div class="header-left">
+            @if($__logoSrc)<img src="{{ $__logoSrc }}" alt="" style="height:44px; max-width:170px; margin-bottom:8px;">@endif
             <div class="school-name">{{ $school->name }}</div>
             <div class="school-sub">
                 @if($school->address){{ $school->address }}@if($school->city), {{ $school->city }}@endif<br>@endif
