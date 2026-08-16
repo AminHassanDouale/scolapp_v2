@@ -150,7 +150,7 @@ class SeedSchoolAcademics extends Command
                     'rank'            => $rank,
                     'class_size'      => $classSize,
                     'class_average'   => round(mt_rand(90, 140) / 10, 2),
-                    'general_comment' => $this->comment($general),
+                    'general_comment' => $this->generalComment($general),
                 ]);
                 $bulletins++;
             }
@@ -174,7 +174,7 @@ class SeedSchoolAcademics extends Command
         };
     }
 
-    private function comment(?float $a): string
+    private function generalComment(?float $a): string
     {
         if ($a === null) {
             return '';
