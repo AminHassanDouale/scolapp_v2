@@ -42,6 +42,10 @@ new #[Layout('layouts.app')] class extends Component {
             'body'      => $this->newMessage,
         ]);
 
+        \App\Models\MessageRecipient::where('thread_id', $this->activeThread)
+            ->where('user_id', '!=', auth()->id())
+            ->update(['is_read' => false, 'read_at' => null]);
+
         $this->newMessage = '';
         $this->success('Message envoyé.', position: 'toast-top toast-end', icon: 'o-paper-airplane', css: 'alert-success', timeout: 3000);
     }

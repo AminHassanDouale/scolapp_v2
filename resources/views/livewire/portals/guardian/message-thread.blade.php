@@ -35,6 +35,10 @@ new #[Layout('layouts.guardian')] class extends Component {
             'body'      => $this->newMessage,
         ]);
 
+        \App\Models\MessageRecipient::where('thread_id', $this->thread->id)
+            ->where('user_id', '!=', auth()->id())
+            ->update(['is_read' => false, 'read_at' => null]);
+
         $this->thread->touch();
         $this->newMessage = '';
         $this->thread->load(['messages.sender', 'recipients.user']);
