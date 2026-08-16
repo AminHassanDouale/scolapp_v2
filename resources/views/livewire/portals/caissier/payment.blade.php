@@ -8,6 +8,9 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\Student;
+use App\Models\Grade;
+use App\Models\SchoolClass;
+use App\Models\AcademicYear;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -18,6 +21,8 @@ new #[Layout('layouts.caissier')] class extends Component {
     public string $invoiceUuid     = '';
     public ?Invoice $invoice       = null;
     public string $studentSearch   = '';
+    public ?int $filterGradeId     = null;
+    public ?int $filterClassId     = null;
     public array $students         = [];
     public ?int $selectedStudentId = null;
     public array $studentInvoices  = [];
@@ -54,22 +59,41 @@ new #[Layout('layouts.caissier')] class extends Component {
         }
     }
 
-    public function updatedStudentSearch(): void
+    public function updatedStudentSearch(): void  { $this->searchStudents(); }
+    public function updatedFilterClassId(): void  { $this->searchStudents(); }
+
+    public function updatedFilterGradeId(): void
     {
-        if (strlen($this->studentSearch) >= 2) {
-            $schoolId = auth()->user()->school_id;
-            $this->students = Student::where('school_id', $schoolId)
-                ->where(function ($q) {
-                    $q->where('name', 'like', "%{$this->studentSearch}%")
-                      ->orWhere('reference', 'like', "%{$this->studentSearch}%");
-                })
-                ->limit(10)
-                ->get()
-                ->map(fn ($s) => ['id' => $s->id, 'name' => $s->full_name . ' (' . $s->reference . ')'])
-                ->toArray();
-        } else {
+        $this->filterClassId = null;   // reset class when the niveau changes
+        $this->searchStudents();
+    }
+
+    public function searchStudents(): void
+    {
+        $schoolId = auth()->user()->school_id;
+        $search   = trim($this->studentSearch);
+
+        // Need at least one criterion (text ≥ 2 chars, or a class/grade)
+        if (strlen($search) < 2 && ! $this->filterClassId && ! $this->filterGradeId) {
             $this->students = [];
+            return;
         }
+
+        $year = AcademicYear::where('school_id', $schoolId)->where('is_current', true)->first();
+
+        $this->students = Student::where('school_id', $schoolId)
+            ->when(strlen($search) >= 2, fn ($q) => $q->where(fn ($w) =>
+                $w->where('name', 'like', "%{$search}%")->orWhere('reference', 'like', "%{$search}%")))
+            ->when($this->filterClassId || $this->filterGradeId, fn ($q) => $q->whereHas('enrollments', fn ($e) =>
+                $e->where('status', 'confirmed')
+                  ->when($year, fn ($x) => $x->where('academic_year_id', $year->id))
+                  ->when($this->filterClassId, fn ($x) => $x->where('school_class_id', $this->filterClassId))
+                  ->when($this->filterGradeId && ! $this->filterClassId, fn ($x) => $x->where('grade_id', $this->filterGradeId))))
+            ->orderBy('name')
+            ->limit(30)
+            ->get()
+            ->map(fn ($s) => ['id' => $s->id, 'name' => $s->full_name . ' (' . $s->reference . ')'])
+            ->toArray();
     }
 
     public function selectStudent(int $studentId): void
@@ -171,7 +195,17 @@ new #[Layout('layouts.caissier')] class extends Component {
 
     public function with(): array
     {
-        return [];
+        $schoolId = auth()->user()->school_id;
+
+        return [
+            'grades' => Grade::where('school_id', $schoolId)->where('is_active', true)
+                ->orderBy('order')->get()
+                ->map(fn ($g) => ['id' => $g->id, 'name' => $g->name])->all(),
+            'classes' => SchoolClass::where('school_id', $schoolId)->where('is_active', true)
+                ->when($this->filterGradeId, fn ($q) => $q->where('grade_id', $this->filterGradeId))
+                ->orderBy('name')->get()
+                ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->all(),
+        ];
     }
 };
 ?>
@@ -188,7 +222,13 @@ new #[Layout('layouts.caissier')] class extends Component {
         {{-- Step 1: Search student --}}
         @if(!$invoice)
         <x-card title="1. Rechercher l'élève" shadow class="border-0">
-            <x-input wire:model.live.debounce="studentSearch" placeholder="Nom, prénom ou référence de l'élève..." icon="o-magnifying-glass" />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <x-select wire:model.live="filterGradeId" :options="$grades" placeholder="Niveau (tous)" icon="o-academic-cap" />
+                <x-select wire:model.live="filterClassId" :options="$classes" placeholder="Classe (toutes)" icon="o-building-office" />
+            </div>
+            <x-input wire:model.live.debounce.400ms="studentSearch"
+                     placeholder="Nom, prénom ou n° de l'élève…" icon="o-magnifying-glass" clearable />
+            <p class="text-xs text-base-content/50 mt-1">Filtrez par niveau/classe, ou tapez au moins 2 caractères.</p>
 
             @if(!empty($students))
             <div class="mt-2 border border-base-200 rounded-xl overflow-hidden shadow-sm">
@@ -202,6 +242,8 @@ new #[Layout('layouts.caissier')] class extends Component {
                 </button>
                 @endforeach
             </div>
+            @elseif(strlen($studentSearch) >= 2 || $filterClassId || $filterGradeId)
+            <p class="mt-3 text-sm text-base-content/40 text-center py-4">Aucun élève trouvé pour ces critères.</p>
             @endif
         </x-card>
 
