@@ -88,6 +88,27 @@ new #[Layout('layouts.guardian')] class extends Component {
         </x-card>
     </div>
 
+    {{-- Quick access --}}
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        @php $qa = [
+            ['guardian.timetable',  'o-clock',                     'Emploi du temps', 'from-violet-500 to-purple-600'],
+            ['guardian.attendance', 'o-calendar-days',             'Présences',       'from-amber-500 to-orange-600'],
+            ['guardian.grades',     'o-chart-bar',                 'Notes',           'from-blue-500 to-indigo-600'],
+            ['guardian.bulletins',  'o-document-text',             'Bulletins',       'from-emerald-500 to-teal-600'],
+            ['guardian.invoices',   'o-document-currency-dollar',  'Factures',        'from-rose-500 to-red-600'],
+        ]; @endphp
+        @foreach($qa as $a)
+        <a href="{{ route($a[0]) }}" wire:navigate class="group">
+            <div class="rounded-2xl p-4 text-center bg-white shadow-sm border border-base-200 hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <div class="w-11 h-11 mx-auto rounded-xl bg-gradient-to-br {{ $a[3] }} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                    <x-icon name="{{ $a[1] }}" class="w-5 h-5 text-white" />
+                </div>
+                <p class="text-xs font-semibold text-base-content/80">{{ $a[2] }}</p>
+            </div>
+        </a>
+        @endforeach
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- My children --}}
         <x-card title="{{ __('navigation.my_children') }}" shadow separator>

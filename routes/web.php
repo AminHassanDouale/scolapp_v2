@@ -341,8 +341,11 @@ Route::middleware(['auth', 'role:guardian|super-admin|admin', 'school.active'])
     ->group(function () {
         Volt::route('/',                      'portals.guardian.dashboard')->name('dashboard');
         Volt::route('/enfants',               'portals.guardian.children')->name('children');
+        Volt::route('/emploi',                'portals.guardian.timetable')->name('timetable');
         Volt::route('/presences',             'portals.guardian.attendance')->name('attendance');
         Volt::route('/notes',                 'portals.guardian.grades')->name('grades');
+        Volt::route('/bulletins',             'portals.guardian.bulletins')->name('bulletins');
+        Volt::route('/bulletins/{uuid}',      'portals.guardian.bulletin-show')->name('bulletins.show');
         Volt::route('/factures',              'portals.guardian.invoices')->name('invoices');
         Volt::route('/factures/{uuid}/print', 'portals.guardian.invoice-print')->name('invoices.print');
         Route::get('/paiement/succes',  [DMoneyPaymentController::class, 'success'])->name('dmoney.success');

@@ -73,8 +73,10 @@
         <x-menu activate-by-route class="px-2">
             <x-menu-item title="{{ __('navigation.dashboard') }}"     icon="o-squares-2x2"              link="{{ route('guardian.dashboard') }}"     class="text-emerald-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.my_children') }}"   icon="o-user-group"               link="{{ route('guardian.children') }}"      class="text-emerald-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item title="{{ __('navigation.timetable') }}"     icon="o-clock"                    link="{{ route('guardian.timetable') }}"     class="text-emerald-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.attendance') }}"    icon="o-calendar-days"            link="{{ route('guardian.attendance') }}"    class="text-emerald-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.grades') }}"        icon="o-chart-bar"                link="{{ route('guardian.grades') }}"        class="text-emerald-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item title="{{ __('navigation.report_cards') }}"  icon="o-document-text"            link="{{ route('guardian.bulletins') }}"     class="text-emerald-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.invoices') }}"      icon="o-document-currency-dollar" link="{{ route('guardian.invoices') }}"      class="text-emerald-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.announcements') }}" icon="o-megaphone"                link="{{ route('guardian.announcements') }}" class="text-emerald-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.messages') }}"      icon="o-envelope"                 link="{{ route('guardian.messages') }}"      class="text-emerald-100 hover:bg-white/10 rounded-lg" />
