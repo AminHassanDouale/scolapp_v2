@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use App\Enums\ReportPeriod;
 use App\Models\AcademicYear;
+use App\Models\AttendanceEntry;
+use App\Models\AttendanceSession;
 use App\Models\Enrollment;
 use App\Models\ReportCard;
 use App\Models\ReportCardSubject;
@@ -157,8 +159,46 @@ class SeedSchoolAcademics extends Command
         }
         $this->info("Bulletins : {$bulletins} ({$period->value})");
 
+        // ── Attendance (last 10 school days, Sun–Thu) ─────────────────────────
+        $attDays = [];
+        $cursor  = now()->startOfDay();
+        while (count($attDays) < 10) {
+            if (! in_array($cursor->dayOfWeek, [5, 6], true)) {   // skip Fri(5) + Sat(6)
+                $attDays[] = $cursor->copy();
+            }
+            $cursor->subDay();
+        }
+        // Weighted pool: mostly present, some absent/late/excused
+        $pool = array_merge(array_fill(0, 8, 'present'), ['absent', 'late', 'excused']);
+
+        $attEntries = 0;
+        foreach ($classes as $class) {
+            $studentIds = Enrollment::where('school_class_id', $class->id)
+                ->where('academic_year_id', $year->id)->where('status', 'confirmed')
+                ->pluck('student_id');
+            if ($studentIds->isEmpty()) {
+                continue;
+            }
+
+            foreach ($attDays as $day) {
+                $session = AttendanceSession::updateOrCreate(
+                    ['school_id' => $school->id, 'school_class_id' => $class->id, 'session_date' => $day->toDateString(), 'period' => 'morning'],
+                    ['uuid' => (string) Str::uuid(), 'academic_year_id' => $year->id, 'teacher_id' => $class->main_teacher_id, 'start_time' => '07:30:00', 'end_time' => '12:15:00'],
+                );
+
+                foreach ($studentIds as $sid) {
+                    AttendanceEntry::updateOrCreate(
+                        ['attendance_session_id' => $session->id, 'student_id' => $sid],
+                        ['status' => $pool[array_rand($pool)]],
+                    );
+                    $attEntries++;
+                }
+            }
+        }
+        $this->info('Présences : ' . $attEntries . ' entrées (' . count($attDays) . ' jours)');
+
         $this->newLine();
-        $this->info("✓ {$school->name} — emplois du temps & bulletins créés.");
+        $this->info("✓ {$school->name} — emplois du temps, bulletins & présences créés.");
 
         return self::SUCCESS;
     }
