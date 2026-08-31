@@ -132,11 +132,11 @@ new #[Layout('layouts.guardian')] class extends Component {
     {{-- Quick access --}}
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         @php $qa = [
-            ['guardian.timetable',  'o-clock',                     'Emploi du temps', 'from-violet-500 to-purple-600'],
-            ['guardian.attendance', 'o-calendar-days',             'Présences',       'from-amber-500 to-orange-600'],
-            ['guardian.grades',     'o-chart-bar',                 'Notes',           'from-blue-500 to-indigo-600'],
-            ['guardian.bulletins',  'o-document-text',             'Bulletins',       'from-emerald-500 to-teal-600'],
-            ['guardian.invoices',   'o-document-currency-dollar',  'Factures',        'from-rose-500 to-red-600'],
+            ['guardian.timetable',  'o-clock',                     __('navigation.timetable'),     'from-violet-500 to-purple-600'],
+            ['guardian.attendance', 'o-calendar-days',             __('navigation.attendance'),    'from-amber-500 to-orange-600'],
+            ['guardian.grades',     'o-chart-bar',                 __('navigation.grades'),        'from-blue-500 to-indigo-600'],
+            ['guardian.bulletins',  'o-document-text',             __('navigation.report_cards'),  'from-emerald-500 to-teal-600'],
+            ['guardian.invoices',   'o-document-currency-dollar',  __('navigation.invoices'),      'from-rose-500 to-red-600'],
         ]; @endphp
         @foreach($qa as $a)
         <a href="{{ route($a[0]) }}" wire:navigate class="group">
@@ -173,22 +173,22 @@ new #[Layout('layouts.guardian')] class extends Component {
                 </div>
                 <div class="flex gap-2">
                     <a href="{{ route('guardian.attendance', ['student' => $student->uuid]) }}" wire:navigate>
-                        <x-badge value="Présences" class="badge-ghost badge-sm hover:badge-primary cursor-pointer" />
+                        <x-badge value="{{ __('navigation.attendance') }}" class="badge-ghost badge-sm hover:badge-primary cursor-pointer" />
                     </a>
                     <a href="{{ route('guardian.grades', ['student' => $student->uuid]) }}" wire:navigate>
-                        <x-badge value="Notes" class="badge-ghost badge-sm hover:badge-success cursor-pointer" />
+                        <x-badge value="{{ __('navigation.grades') }}" class="badge-ghost badge-sm hover:badge-success cursor-pointer" />
                     </a>
                 </div>
             </div>
             @empty
             <div class="text-center py-8 text-base-content/40">
                 <x-icon name="o-users" class="w-10 h-10 mx-auto mb-2" />
-                <p class="text-sm">Aucun enfant associé à ce compte</p>
+                <p class="text-sm">{{ __('navigation.no_child_linked') }}</p>
             </div>
             @endforelse
             <div class="pt-3">
                 <a href="{{ route('guardian.children') }}" wire:navigate>
-                    <x-button label="Voir tous" icon="o-arrow-right" class="btn-sm btn-ghost w-full" />
+                    <x-button label="{{ __('navigation.view_all') }}" icon="o-arrow-right" class="btn-sm btn-ghost w-full" />
                 </a>
             </div>
         </x-card>
@@ -203,12 +203,12 @@ new #[Layout('layouts.guardian')] class extends Component {
             @empty
             <div class="text-center py-8 text-base-content/40">
                 <x-icon name="o-megaphone" class="w-10 h-10 mx-auto mb-2" />
-                <p class="text-sm">Aucune annonce</p>
+                <p class="text-sm">{{ __('navigation.no_announcements') }}</p>
             </div>
             @endforelse
             <div class="pt-3">
                 <a href="{{ route('guardian.announcements') }}" wire:navigate>
-                    <x-button label="Toutes les annonces" icon="o-arrow-right" class="btn-sm btn-ghost w-full" />
+                    <x-button label="{{ __('navigation.all_announcements') }}" icon="o-arrow-right" class="btn-sm btn-ghost w-full" />
                 </a>
             </div>
         </x-card>
@@ -218,9 +218,9 @@ new #[Layout('layouts.guardian')] class extends Component {
     @if($unpaidInvoices > 0)
     <x-alert icon="o-exclamation-triangle" class="alert-warning">
         <div class="flex items-center justify-between w-full">
-            <span>Vous avez <strong>{{ $unpaidInvoices }}</strong> facture(s) impayée(s).</span>
+            <span>{!! __('navigation.unpaid_invoices_warning', ['count' => '<strong>' . $unpaidInvoices . '</strong>']) !!}</span>
             <a href="{{ route('guardian.invoices') }}" wire:navigate>
-                <x-button label="Voir les factures" class="btn-sm btn-warning" />
+                <x-button label="{{ __('navigation.view_invoices') }}" class="btn-sm btn-warning" />
             </a>
         </div>
     </x-alert>

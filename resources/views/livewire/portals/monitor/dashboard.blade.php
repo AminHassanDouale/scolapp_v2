@@ -89,7 +89,7 @@ new #[Layout('layouts.monitor')] class extends Component {
                 </div>
                 <div>
                     <p class="text-2xl font-black text-amber-700">{{ $totalClasses }}</p>
-                    <p class="text-xs text-base-content/60">Classes</p>
+                    <p class="text-xs text-base-content/60">{{ __('navigation.classes') }}</p>
                 </div>
             </div>
         </x-card>
@@ -101,7 +101,7 @@ new #[Layout('layouts.monitor')] class extends Component {
                 </div>
                 <div>
                     <p class="text-2xl font-black text-green-700">{{ $todaySessions }}</p>
-                    <p class="text-xs text-base-content/60">Sessions aujourd'hui</p>
+                    <p class="text-xs text-base-content/60">{{ __('navigation.sessions_today') }}</p>
                 </div>
             </div>
         </x-card>
@@ -113,7 +113,7 @@ new #[Layout('layouts.monitor')] class extends Component {
                 </div>
                 <div>
                     <p class="text-2xl font-black text-red-700">{{ $todayAbsent }}</p>
-                    <p class="text-xs text-base-content/60">Absents</p>
+                    <p class="text-xs text-base-content/60">{{ __('navigation.absent') }}</p>
                 </div>
             </div>
         </x-card>
@@ -125,14 +125,14 @@ new #[Layout('layouts.monitor')] class extends Component {
                 </div>
                 <div>
                     <p class="text-2xl font-black text-orange-700">{{ $todayLate }}</p>
-                    <p class="text-xs text-base-content/60">Retards</p>
+                    <p class="text-xs text-base-content/60">{{ __('navigation.late') }}</p>
                 </div>
             </div>
         </x-card>
     </div>
 
     {{-- Attendance trend chart --}}
-    <x-card title="Tendance des présences (7 jours)" shadow separator>
+    <x-card title="{{ __('navigation.attendance_trend_7d') }}" shadow separator>
         <div class="h-64" wire:ignore
              x-data
              x-init="new Chart($refs.trend, @js($trendChart))">
@@ -142,34 +142,34 @@ new #[Layout('layouts.monitor')] class extends Component {
 
     {{-- Quick actions --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <x-card title="Actions rapides" shadow separator>
+        <x-card title="{{ __('navigation.quick_actions') }}" shadow separator>
             <div class="grid grid-cols-2 gap-3">
                 <a href="{{ route('monitor.attendance') }}" wire:navigate
                    class="flex flex-col items-center gap-2 p-4 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors text-center group">
                     <div class="w-10 h-10 rounded-full bg-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <x-icon name="o-calendar-days" class="w-5 h-5 text-white" />
                     </div>
-                    <span class="text-xs font-semibold text-amber-700">Présences</span>
+                    <span class="text-xs font-semibold text-amber-700">{{ __('navigation.attendance') }}</span>
                 </a>
                 <a href="{{ route('monitor.students') }}" wire:navigate
                    class="flex flex-col items-center gap-2 p-4 rounded-xl bg-orange-50 hover:bg-orange-100 transition-colors text-center group">
                     <div class="w-10 h-10 rounded-full bg-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <x-icon name="o-user-group" class="w-5 h-5 text-white" />
                     </div>
-                    <span class="text-xs font-semibold text-orange-700">Élèves</span>
+                    <span class="text-xs font-semibold text-orange-700">{{ __('navigation.students') }}</span>
                 </a>
                 <a href="{{ route('monitor.schedule') }}" wire:navigate
                    class="flex flex-col items-center gap-2 p-4 rounded-xl bg-yellow-50 hover:bg-yellow-100 transition-colors text-center group">
                     <div class="w-10 h-10 rounded-full bg-yellow-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <x-icon name="o-clock" class="w-5 h-5 text-white" />
                     </div>
-                    <span class="text-xs font-semibold text-yellow-700">Planning</span>
+                    <span class="text-xs font-semibold text-yellow-700">{{ __('navigation.planning') }}</span>
                 </a>
             </div>
         </x-card>
 
         {{-- Recent absences --}}
-        <x-card title="Absences récentes" shadow separator>
+        <x-card title="{{ __('navigation.recent_absences') }}" shadow separator>
             @forelse($recentAbsences as $entry)
             <div class="flex items-center gap-3 py-2 border-b border-base-100 last:border-0">
                 <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
@@ -179,12 +179,12 @@ new #[Layout('layouts.monitor')] class extends Component {
                     <p class="text-sm font-medium truncate">{{ $entry->student?->full_name }}</p>
                     <p class="text-xs text-base-content/50">{{ $entry->session?->schoolClass?->name }} · {{ $entry->session?->session_date?->format('d/m') }}</p>
                 </div>
-                <x-badge value="Absent" class="badge-error badge-sm" />
+                <x-badge value="{{ __('navigation.absent') }}" class="badge-error badge-sm" />
             </div>
             @empty
             <div class="text-center py-8 text-base-content/40">
                 <x-icon name="o-check-circle" class="w-10 h-10 mx-auto mb-2 text-success" />
-                <p class="text-sm">Aucune absence aujourd'hui</p>
+                <p class="text-sm">{{ __('navigation.no_absences_today') }}</p>
             </div>
             @endforelse
         </x-card>

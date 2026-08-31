@@ -123,7 +123,7 @@ new #[Layout('layouts.student')] class extends Component {
                 <x-icon name="o-chart-bar" class="w-5 h-5 text-violet-600" />
             </div>
             <p class="text-2xl font-black text-violet-700">{{ $totalScores }}</p>
-            <p class="text-xs text-base-content/60">Notes</p>
+            <p class="text-xs text-base-content/60">{{ __('navigation.notes') }}</p>
         </x-card>
 
         <x-card class="border-0 shadow-sm bg-gradient-to-br from-green-50 to-white text-center">
@@ -131,7 +131,7 @@ new #[Layout('layouts.student')] class extends Component {
                 <x-icon name="o-star" class="w-5 h-5 text-green-600" />
             </div>
             <p class="text-2xl font-black text-green-700">{{ $avgScore ? round($avgScore) . '%' : '—' }}</p>
-            <p class="text-xs text-base-content/60">Moyenne générale</p>
+            <p class="text-xs text-base-content/60">{{ __('navigation.general_average') }}</p>
         </x-card>
 
         <x-card class="border-0 shadow-sm bg-gradient-to-br from-red-50 to-white text-center">
@@ -139,7 +139,7 @@ new #[Layout('layouts.student')] class extends Component {
                 <x-icon name="o-x-circle" class="w-5 h-5 text-red-600" />
             </div>
             <p class="text-2xl font-black text-red-700">{{ $absences }}</p>
-            <p class="text-xs text-base-content/60">Absences</p>
+            <p class="text-xs text-base-content/60">{{ __('navigation.absences') }}</p>
         </x-card>
 
         <x-card class="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-white text-center">
@@ -147,46 +147,46 @@ new #[Layout('layouts.student')] class extends Component {
                 <x-icon name="o-megaphone" class="w-5 h-5 text-blue-600" />
             </div>
             <p class="text-2xl font-black text-blue-700">{{ $announcements->count() }}</p>
-            <p class="text-xs text-base-content/60">Annonces</p>
+            <p class="text-xs text-base-content/60">{{ __('navigation.announcements') }}</p>
         </x-card>
     </div>
 
     {{-- Quick actions --}}
-    <x-card title="Accès rapide" shadow separator>
+    <x-card title="{{ __('navigation.quick_access') }}" shadow separator>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <a href="{{ route('student.timetable') }}" wire:navigate
                class="flex flex-col items-center gap-2 p-4 rounded-xl bg-violet-50 hover:bg-violet-100 transition-colors group">
                 <div class="w-10 h-10 rounded-full bg-violet-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <x-icon name="o-table-cells" class="w-5 h-5 text-white" />
                 </div>
-                <span class="text-xs font-semibold text-violet-700">Emploi du temps</span>
+                <span class="text-xs font-semibold text-violet-700">{{ __('navigation.timetable') }}</span>
             </a>
             <a href="{{ route('student.grades') }}" wire:navigate
                class="flex flex-col items-center gap-2 p-4 rounded-xl bg-green-50 hover:bg-green-100 transition-colors group">
                 <div class="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <x-icon name="o-chart-bar" class="w-5 h-5 text-white" />
                 </div>
-                <span class="text-xs font-semibold text-green-700">Mes notes</span>
+                <span class="text-xs font-semibold text-green-700">{{ __('navigation.grades') }}</span>
             </a>
             <a href="{{ route('student.attendance') }}" wire:navigate
                class="flex flex-col items-center gap-2 p-4 rounded-xl bg-orange-50 hover:bg-orange-100 transition-colors group">
                 <div class="w-10 h-10 rounded-full bg-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <x-icon name="o-calendar-days" class="w-5 h-5 text-white" />
                 </div>
-                <span class="text-xs font-semibold text-orange-700">Présences</span>
+                <span class="text-xs font-semibold text-orange-700">{{ __('navigation.attendance') }}</span>
             </a>
             <a href="{{ route('student.announcements') }}" wire:navigate
                class="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors group">
                 <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <x-icon name="o-megaphone" class="w-5 h-5 text-white" />
                 </div>
-                <span class="text-xs font-semibold text-blue-700">Annonces</span>
+                <span class="text-xs font-semibold text-blue-700">{{ __('navigation.announcements') }}</span>
             </a>
         </div>
     </x-card>
 
     {{-- Grades trend chart --}}
-    <x-card title="Évolution des notes" shadow separator>
+    <x-card title="{{ __('navigation.grades_evolution') }}" shadow separator>
         @if($hasGrades)
         <div class="h-64" wire:ignore x-data x-init="new Chart($refs.grades, @js($gradesChart))">
             <canvas x-ref="grades"></canvas>
@@ -194,14 +194,14 @@ new #[Layout('layouts.student')] class extends Component {
         @else
         <div class="text-center py-10 text-base-content/40">
             <x-icon name="o-chart-bar" class="w-10 h-10 mx-auto mb-2" />
-            <p class="text-sm">Aucune note disponible</p>
+            <p class="text-sm">{{ __('navigation.no_grades') }}</p>
         </div>
         @endif
     </x-card>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Recent grades --}}
-        <x-card title="Dernières notes" shadow separator>
+        <x-card title="{{ __('navigation.recent_grades') }}" shadow separator>
             @forelse($recentScores as $score)
             <div class="flex items-center gap-3 py-2 border-b border-base-100 last:border-0">
                 <div class="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center flex-shrink-0">
@@ -220,13 +220,13 @@ new #[Layout('layouts.student')] class extends Component {
             @empty
             <div class="text-center py-8 text-base-content/40">
                 <x-icon name="o-chart-bar" class="w-10 h-10 mx-auto mb-2" />
-                <p class="text-sm">Aucune note disponible</p>
+                <p class="text-sm">{{ __('navigation.no_grades') }}</p>
             </div>
             @endforelse
         </x-card>
 
         {{-- Announcements --}}
-        <x-card title="Annonces récentes" shadow separator>
+        <x-card title="{{ __('navigation.recent_announcements') }}" shadow separator>
             @forelse($announcements as $ann)
             <div class="py-2 border-b border-base-100 last:border-0">
                 <p class="font-medium text-sm">{{ $ann->title }}</p>
@@ -235,7 +235,7 @@ new #[Layout('layouts.student')] class extends Component {
             @empty
             <div class="text-center py-8 text-base-content/40">
                 <x-icon name="o-megaphone" class="w-10 h-10 mx-auto mb-2" />
-                <p class="text-sm">Aucune annonce</p>
+                <p class="text-sm">{{ __('navigation.no_announcements') }}</p>
             </div>
             @endforelse
         </x-card>
