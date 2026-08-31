@@ -1,17 +1,21 @@
 <?php
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
+use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 new #[Layout('layouts.app')] class extends Component {
-    use Toast;
+    use Toast, WithFileUploads;
 
     public string $name             = '';
     public string $email            = '';
     public string $phone            = '';
+    public string $whatsapp_number  = '';
     public string $ui_lang          = 'fr';
     public string $timezone         = 'Africa/Djibouti';
+    public $avatar                  = null;   // TemporaryUploadedFile
 
     // Password change
     public string $current_password = '';
@@ -23,11 +27,12 @@ new #[Layout('layouts.app')] class extends Component {
     {
         $user = auth()->user();
         $this->fill([
-            'name'       => $user->name ?? '',
-            'email'      => $user->email ?? '',
-            'phone'      => $user->phone ?? '',
-            'ui_lang'    => $user->ui_lang ?? 'fr',
-            'timezone'   => $user->timezone ?? 'Africa/Djibouti',
+            'name'            => $user->name ?? '',
+            'email'           => $user->email ?? '',
+            'phone'           => $user->phone ?? '',
+            'whatsapp_number' => $user->whatsapp_number ?? '',
+            'ui_lang'         => $user->ui_lang ?? 'fr',
+            'timezone'        => $user->timezone ?? 'Africa/Djibouti',
         ]);
     }
 
@@ -35,18 +40,35 @@ new #[Layout('layouts.app')] class extends Component {
     {
         $userId = auth()->id();
         $this->validate([
-            'name'       => 'required|string|max:200',
-            'email'      => "required|email|unique:users,email,{$userId}",
-            'phone'      => 'nullable|string|max:30',
+            'name'            => 'required|string|max:200',
+            'email'           => "required|email|unique:users,email,{$userId}",
+            'phone'           => 'nullable|string|max:30',
+            'whatsapp_number' => 'nullable|string|max:30',
         ]);
 
         auth()->user()->update([
-            'name'       => $this->name,
-            'email'      => $this->email,
-            'phone'      => $this->phone ?: null,
+            'name'            => $this->name,
+            'email'           => $this->email,
+            'phone'           => $this->phone ?: null,
+            'whatsapp_number' => $this->whatsapp_number ?: null,
         ]);
 
         $this->success('Profil mis à jour.', position: 'toast-top toast-end', icon: 'o-pencil-square', css: 'alert-success', timeout: 3000);
+    }
+
+    public function saveAvatar(): void
+    {
+        $this->validate(['avatar' => 'required|image|mimes:png,jpg,jpeg,webp|max:2048']);
+
+        $user = auth()->user();
+        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+        $path = $this->avatar->store('avatars', 'public');
+        $user->update(['avatar' => $path]);
+
+        $this->avatar = null;
+        $this->success('Photo mise à jour.', position: 'toast-top toast-end', icon: 'o-photo', css: 'alert-success', timeout: 3000);
     }
 
     public function changePassword(): void
@@ -69,12 +91,11 @@ new #[Layout('layouts.app')] class extends Component {
 
     public function switchLang(string $lang): void
     {
-        if (!in_array($lang, ['fr', 'en', 'ar'])) return;
+        if (! in_array($lang, ['fr', 'en', 'ar'])) return;
         auth()->user()->update(['ui_lang' => $lang]);
         session(['locale' => $lang]);
-        app()->setLocale($lang);
-        $this->ui_lang = $lang;
-        $this->success('Langue mise à jour.', position: 'toast-top toast-end', icon: 'o-pencil-square', css: 'alert-success', timeout: 3000);
+        // Full reload so the whole UI (menus + content) picks up the new locale
+        $this->redirect(route('profile.show'), navigate: false);
     }
 
     public function savePreferences(): void
@@ -115,7 +136,11 @@ new #[Layout('layouts.app')] class extends Component {
                         <x-form wire:submit="saveProfile" class="space-y-4">
                             <x-input label="Nom d'affichage *" wire:model="name" required />
                             <x-input label="Email *" wire:model="email" type="email" required />
-                            <x-input label="Téléphone" wire:model="phone" />
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <x-input label="Téléphone" wire:model="phone" icon="o-phone" placeholder="+253 77…" />
+                                <x-input label="WhatsApp" wire:model="whatsapp_number" icon="o-chat-bubble-left-right" placeholder="+253 77…"
+                                         hint="Numéro pour les notifications WhatsApp" />
+                            </div>
                             <x-slot:actions>
                                 <x-button label="Enregistrer" type="submit" icon="o-check"
                                           class="btn-primary" spinner="saveProfile" />
@@ -211,8 +236,14 @@ new #[Layout('layouts.app')] class extends Component {
             {{-- Avatar card --}}
             <x-card>
                 <div class="text-center py-4">
-                    <div class="w-20 h-20 rounded-full bg-primary flex items-center justify-center font-black text-3xl text-primary-content mx-auto mb-3">
-                        {{ substr(auth()->user()->name ?? auth()->user()->email ?? '?', 0, 1) }}
+                    <div class="w-24 h-24 rounded-full overflow-hidden mx-auto mb-3 ring-2 ring-primary/20 bg-primary flex items-center justify-center">
+                        @if($avatar)
+                            <img src="{{ $avatar->temporaryUrl() }}" class="w-full h-full object-cover" alt="">
+                        @elseif(auth()->user()->avatar)
+                            <img src="{{ auth()->user()->avatar_url }}" class="w-full h-full object-cover" alt="">
+                        @else
+                            <span class="font-black text-3xl text-primary-content">{{ substr(auth()->user()->name ?? auth()->user()->email ?? '?', 0, 1) }}</span>
+                        @endif
                     </div>
                     <h3 class="font-bold text-lg">{{ auth()->user()->name }}</h3>
                     <p class="text-base-content/60 text-sm">{{ auth()->user()->email }}</p>
@@ -220,6 +251,15 @@ new #[Layout('layouts.app')] class extends Component {
                         @foreach($userRoles as $role)
                         <x-badge :value="$role" class="badge-primary badge-sm" />
                         @endforeach
+                    </div>
+
+                    {{-- Avatar upload --}}
+                    <div class="mt-4 pt-4 border-t border-base-200">
+                        <x-file wire:model="avatar" accept="image/png,image/jpeg,image/webp" hint="PNG/JPG/WEBP — max 2 Mo" />
+                        <div wire:loading wire:target="avatar" class="text-xs text-base-content/50 mt-1">Chargement…</div>
+                        @if($avatar)
+                        <x-button label="Enregistrer la photo" icon="o-check" wire:click="saveAvatar" spinner="saveAvatar" class="btn-primary btn-sm btn-block mt-2" />
+                        @endif
                     </div>
                 </div>
             </x-card>
