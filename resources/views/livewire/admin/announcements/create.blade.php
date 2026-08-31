@@ -1,10 +1,18 @@
 <?php
 use App\Models\Announcement;
 use App\Models\SchoolClass;
+use App\Models\User;
+use App\Models\Teacher;
+use App\Models\Guardian;
+use App\Models\Student;
+use App\Models\Enrollment;
+use App\Notifications\NewAnnouncementNotification;
 use App\Enums\AnnouncementLevel;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use Mary\Traits\Toast;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Log;
 
 new #[Layout('layouts.app')] class extends Component {
     use Toast;
@@ -25,7 +33,7 @@ new #[Layout('layouts.app')] class extends Component {
             'level' => 'required|in:' . implode(',', array_column(AnnouncementLevel::cases(), 'value')),
         ]);
 
-        Announcement::create([
+        $announcement = Announcement::create([
             'school_id'       => auth()->user()->school_id,
             'created_by'      => auth()->id(),
             'title'           => $this->title,
@@ -42,11 +50,54 @@ new #[Layout('layouts.app')] class extends Component {
             'expires_at'      => $this->expiresAt ?: null,
         ]);
 
-        $msg = $this->publishAt && $this->publishAt > now()->toDateTimeString()
-            ? 'Annonce programmée.'
-            : 'Annonce publiée.';
+        $scheduled = $this->publishAt && $this->publishAt > now()->toDateTimeString();
+
+        // Notify the target audience (email + WhatsApp) — only if publishing now
+        $notified = 0;
+        if (! $scheduled) {
+            try {
+                $users = $this->audienceUsers($announcement);
+                if ($users->isNotEmpty()) {
+                    Notification::send($users, new NewAnnouncementNotification($announcement));
+                    $notified = $users->count();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Announcement notify failed: ' . $e->getMessage());
+            }
+        }
+
+        $msg = $scheduled ? 'Annonce programmée.' : 'Annonce publiée.' . ($notified ? " {$notified} destinataire(s) notifié(s)." : '');
         $this->success($msg, position: 'toast-top toast-end', icon: 'o-paper-airplane', css: 'alert-success', timeout: 3000);
         $this->redirect(route('admin.announcements.index'), navigate: true);
+    }
+
+    /** Resolve the User models for an announcement's target audience. */
+    private function audienceUsers(Announcement $a): \Illuminate\Support\Collection
+    {
+        $schoolId = $a->school_id;
+        $ta       = $a->target_audience;
+        $type     = is_array($ta) ? ($ta['type'] ?? 'all') : 'all';
+        $classIds = is_array($ta) ? ($ta['class_ids'] ?? []) : [];
+
+        $teacherIds  = fn () => Teacher::where('school_id', $schoolId)->whereNotNull('user_id')->pluck('user_id');
+        $guardianIds = fn ($studentIds = null) => Guardian::where('school_id', $schoolId)->whereNotNull('user_id')
+            ->when($studentIds, fn ($q) => $q->whereHas('students', fn ($s) => $s->whereIn('students.id', $studentIds)))
+            ->pluck('user_id');
+        $studentIds  = fn ($ids = null) => Student::where('school_id', $schoolId)->whereNotNull('user_id')
+            ->when($ids, fn ($q) => $q->whereIn('id', $ids))->pluck('user_id');
+
+        $userIds = match ($type) {
+            'teachers'  => $teacherIds(),
+            'guardians' => $guardianIds(),
+            'students'  => $studentIds(),
+            'class'     => (function () use ($classIds, $guardianIds, $studentIds) {
+                $sids = Enrollment::whereIn('school_class_id', $classIds)->where('status', 'confirmed')->pluck('student_id')->unique();
+                return $guardianIds($sids)->merge($studentIds($sids));
+            })(),
+            default     => $teacherIds()->merge($guardianIds())->merge($studentIds()),
+        };
+
+        return User::whereIn('id', $userIds->unique()->filter()->values())->get();
     }
 
     public function with(): array
