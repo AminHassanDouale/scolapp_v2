@@ -8,6 +8,12 @@ use App\Models\AttendanceSession;
 use App\Models\AttendanceEntry;
 use App\Models\Student;
 use App\Models\Enrollment;
+use App\Mail\AbsenceNotificationMail;
+use App\Services\AttendanceService;
+use App\Services\WhatsAppService;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 new #[Layout('layouts.teacher')] class extends Component {
     use Toast;
@@ -62,12 +68,14 @@ new #[Layout('layouts.teacher')] class extends Component {
             return;
         }
 
-        $teacher = Teacher::where('user_id', auth()->id())->first();
+        $class = SchoolClass::where('school_id', auth()->user()->school_id)->find($this->selectedClassId);
+        if (! $class) {
+            $this->error('Classe introuvable.', position: 'toast-top toast-center', timeout: 3000);
+            return;
+        }
 
-        $session = AttendanceSession::firstOrCreate(
-            ['school_class_id' => $this->selectedClassId, 'session_date' => $this->selectedDate],
-            ['teacher_id' => $teacher?->id, 'school_id' => auth()->user()->school_id]
-        );
+        // openSession fills academic_year_id, uuid, teacher, period correctly
+        $session = app(AttendanceService::class)->openSession($class, 'morning', Carbon::parse($this->selectedDate));
 
         foreach ($this->attendance as $studentId => $status) {
             AttendanceEntry::updateOrCreate(
@@ -76,8 +84,44 @@ new #[Layout('layouts.teacher')] class extends Component {
             );
         }
 
+        $notified = $this->notifyGuardians($session);
+
         $this->sessionSaved = true;
-        $this->success('Présences enregistrées !', position: 'toast-top toast-end', icon: 'o-check-circle', css: 'alert-success', timeout: 3000);
+        $this->success('Présences enregistrées !' . ($notified ? " {$notified} parent(s) notifié(s)." : ''),
+            position: 'toast-top toast-end', icon: 'o-check-circle', css: 'alert-success', timeout: 3000);
+    }
+
+    private function notifyGuardians(AttendanceSession $session): int
+    {
+        $nonPresent = collect($this->attendance)->filter(fn($s) => $s !== 'present')->keys()->all();
+        if (empty($nonPresent)) {
+            return 0;
+        }
+
+        $labels = ['absent' => 'absent(e)', 'late' => 'en retard', 'excused' => 'excusé(e)'];
+        $count  = 0;
+
+        foreach (Student::whereIn('id', $nonPresent)->with('guardians')->get() as $student) {
+            $status = $this->attendance[$student->id];
+            $waText = "🔔 *Absence signalée* — " . ($session->school?->name ?? config('app.name')) . "\n"
+                . "Élève : {$student->full_name}\n"
+                . "Statut : " . ($labels[$status] ?? $status) . "\n"
+                . "Date : " . ($session->session_date?->format('d/m/Y') ?? today()->format('d/m/Y'));
+
+            foreach ($student->guardians as $g) {
+                if ($g->email) {
+                    try {
+                        Mail::to($g->email)->send(new AbsenceNotificationMail($g, $student, $session, $status, null));
+                        $count++;
+                    } catch (\Throwable $e) {
+                        Log::warning('Teacher absence email failed: ' . $e->getMessage());
+                    }
+                }
+                app(WhatsAppService::class)->notifyModel($g, $waText);
+            }
+        }
+
+        return $count;
     }
 
     public function with(): array

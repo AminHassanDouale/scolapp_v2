@@ -177,7 +177,7 @@ new #[Layout('layouts.teacher')] class extends Component {
     <x-card title="{{ __('navigation.recent_assessments') }}" shadow separator>
         <x-table :rows="$recentAssessments" :columns="[
             ['key' => 'subject.name',          'label' => __('navigation.subject')],
-            ['key' => 'school_class.name',     'label' => __('navigation.class')],
+            ['key' => 'schoolClass.name',      'label' => __('navigation.class')],
             ['key' => 'assessment_date',       'label' => __('navigation.date'), 'format' => 'date'],
             ['key' => 'max_score',             'label' => __('navigation.max_score')],
         ]" />
