@@ -29,7 +29,36 @@ new #[Layout('layouts.monitor')] class extends Component {
             ->limit(8)
             ->get();
 
-        return compact('todaySessions', 'todayAbsent', 'todayLate', 'totalClasses', 'recentAbsences');
+        // 7-day attendance trend (absent / late per day)
+        $labels = [];
+        $absentSeries = [];
+        $lateSeries = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $day = today()->subDays($i);
+            $labels[] = $day->isoFormat('dd D/M');
+            $absentSeries[] = AttendanceEntry::whereHas('session', fn($q) => $q->where('school_id', $schoolId)->whereDate('session_date', $day))
+                ->where('status', 'absent')->count();
+            $lateSeries[] = AttendanceEntry::whereHas('session', fn($q) => $q->where('school_id', $schoolId)->whereDate('session_date', $day))
+                ->where('status', 'late')->count();
+        }
+
+        $trendChart = [
+            'type' => 'line',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [
+                    ['label' => 'Absents', 'data' => $absentSeries, 'borderColor' => '#dc2626', 'backgroundColor' => 'rgba(220,38,38,.1)', 'fill' => true, 'tension' => 0.4],
+                    ['label' => 'Retards', 'data' => $lateSeries, 'borderColor' => '#f59e0b', 'backgroundColor' => 'rgba(245,158,11,.1)', 'fill' => true, 'tension' => 0.4],
+                ],
+            ],
+            'options' => [
+                'responsive' => true, 'maintainAspectRatio' => false,
+                'plugins' => ['legend' => ['position' => 'bottom']],
+                'scales' => ['y' => ['beginAtZero' => true, 'ticks' => ['precision' => 0]]],
+            ],
+        ];
+
+        return compact('todaySessions', 'todayAbsent', 'todayLate', 'totalClasses', 'recentAbsences', 'trendChart');
     }
 };
 ?>
@@ -101,6 +130,15 @@ new #[Layout('layouts.monitor')] class extends Component {
             </div>
         </x-card>
     </div>
+
+    {{-- Attendance trend chart --}}
+    <x-card title="Tendance des présences (7 jours)" shadow separator>
+        <div class="h-64" wire:ignore
+             x-data
+             x-init="new Chart($refs.trend, @js($trendChart))">
+            <canvas x-ref="trend"></canvas>
+        </div>
+    </x-card>
 
     {{-- Quick actions --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

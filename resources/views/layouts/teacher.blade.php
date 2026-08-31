@@ -12,6 +12,7 @@
     @livewireStyles
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         .portal-gradient { background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%); }
         .sidebar-teacher  { background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%); }

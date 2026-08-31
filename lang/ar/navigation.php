@@ -82,4 +82,7 @@ return [
     'surveillance_today'    => 'مراقبة اليوم',
     'record_payment'        => 'تسجيل دفع',
     'daily_report'          => 'تقرير يومي',
+    'days'                  => 'أيام',
+    'no_data'               => 'لا توجد بيانات متاحة',
+    'overview'              => 'نظرة عامة',
 ];

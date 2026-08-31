@@ -83,4 +83,7 @@ return [
     'surveillance_today'    => 'Surveillance du jour',
     'record_payment'        => 'Encaisser un paiement',
     'daily_report'          => 'Rapport journalier',
+    'days'                  => 'jours',
+    'no_data'               => 'Aucune donnée disponible',
+    'overview'              => 'Aperçu',
 ];

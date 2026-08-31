@@ -10,6 +10,7 @@
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700&display=swap" rel="stylesheet"/>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         .portal-gradient { background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%); }
         .sidebar-monitor  { background: linear-gradient(180deg, #78350f 0%, #92400e 100%); }

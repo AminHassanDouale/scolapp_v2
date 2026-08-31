@@ -37,7 +37,38 @@ new #[Layout('layouts.teacher')] class extends Component {
         // Classes this teacher teaches
         $myClasses = $teacher?->schoolClasses ?? collect();
 
-        return compact('teacher', 'classCount', 'subjectCount', 'todayAttendance', 'recentAssessments', 'myClasses');
+        // Attendance breakdown across this teacher's sessions (last 30 days)
+        $entryCounts = ['present' => 0, 'absent' => 0, 'late' => 0, 'excused' => 0];
+        if ($teacher) {
+            $rows = \App\Models\AttendanceEntry::whereHas('session', fn($q) =>
+                    $q->where('teacher_id', $teacher->id)->where('session_date', '>=', today()->subDays(30)))
+                ->selectRaw('status, COUNT(*) as c')
+                ->groupBy('status')
+                ->pluck('c', 'status');
+            foreach ($entryCounts as $k => $_) {
+                $entryCounts[$k] = (int) ($rows[$k] ?? 0);
+            }
+        }
+
+        $attendanceChart = [
+            'type' => 'doughnut',
+            'data' => [
+                'labels' => ['Présent', 'Absent', 'Retard', 'Excusé'],
+                'datasets' => [[
+                    'data' => array_values($entryCounts),
+                    'backgroundColor' => ['#16a34a', '#dc2626', '#f59e0b', '#3b82f6'],
+                    'borderWidth' => 0,
+                ]],
+            ],
+            'options' => [
+                'responsive' => true, 'maintainAspectRatio' => false,
+                'cutout' => '65%',
+                'plugins' => ['legend' => ['position' => 'bottom']],
+            ],
+        ];
+        $hasAttendanceData = array_sum($entryCounts) > 0;
+
+        return compact('teacher', 'classCount', 'subjectCount', 'todayAttendance', 'recentAssessments', 'myClasses', 'attendanceChart', 'hasAttendanceData');
     }
 };
 ?>
@@ -112,6 +143,20 @@ new #[Layout('layouts.teacher')] class extends Component {
             </div>
         </x-card>
     </div>
+
+    {{-- Attendance breakdown --}}
+    <x-card title="{{ __('navigation.attendance') }} — 30 {{ __('navigation.days') }}" shadow separator>
+        @if($hasAttendanceData)
+        <div class="h-64" wire:ignore x-data x-init="new Chart($refs.att, @js($attendanceChart))">
+            <canvas x-ref="att"></canvas>
+        </div>
+        @else
+        <div class="text-center py-10 text-base-content/40">
+            <x-icon name="o-chart-pie" class="w-10 h-10 mx-auto mb-2" />
+            <p class="text-sm">{{ __('navigation.no_data') }}</p>
+        </div>
+        @endif
+    </x-card>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Quick actions --}}

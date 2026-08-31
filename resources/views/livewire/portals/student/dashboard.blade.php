@@ -54,7 +54,42 @@ new #[Layout('layouts.student')] class extends Component {
                 ->get()
             : collect();
 
-        return compact('student', 'enrollment', 'absences', 'totalScores', 'avgScore', 'announcements', 'recentScores');
+        // Grades trend — last 10 assessments (percentage), chronological
+        $trendScores = $student
+            ? StudentScore::where('student_id', $student->id)
+                ->whereHas('assessment', fn($q) => $q->where('max_score', '>', 0))
+                ->with('assessment.subject')
+                ->join('assessments', 'student_scores.assessment_id', '=', 'assessments.id')
+                ->orderBy('assessments.assessment_date')
+                ->select('student_scores.*')
+                ->limit(10)
+                ->get()
+            : collect();
+
+        $gradesChart = [
+            'type' => 'line',
+            'data' => [
+                'labels' => $trendScores->map(fn($s) => $s->assessment?->subject?->name
+                    ? mb_substr($s->assessment->subject->name, 0, 10)
+                    : ($s->assessment?->assessment_date?->format('d/m') ?? ''))->all(),
+                'datasets' => [[
+                    'label' => 'Note (%)',
+                    'data' => $trendScores->map(fn($s) => $s->assessment && $s->assessment->max_score
+                        ? round($s->score / $s->assessment->max_score * 100, 1) : 0)->all(),
+                    'borderColor' => '#7c3aed',
+                    'backgroundColor' => 'rgba(124,58,237,.12)',
+                    'fill' => true, 'tension' => 0.4, 'pointRadius' => 4,
+                ]],
+            ],
+            'options' => [
+                'responsive' => true, 'maintainAspectRatio' => false,
+                'plugins' => ['legend' => ['display' => false]],
+                'scales' => ['y' => ['beginAtZero' => true, 'max' => 100]],
+            ],
+        ];
+        $hasGrades = $trendScores->count() > 0;
+
+        return compact('student', 'enrollment', 'absences', 'totalScores', 'avgScore', 'announcements', 'recentScores', 'gradesChart', 'hasGrades');
     }
 };
 ?>
@@ -148,6 +183,20 @@ new #[Layout('layouts.student')] class extends Component {
                 <span class="text-xs font-semibold text-blue-700">Annonces</span>
             </a>
         </div>
+    </x-card>
+
+    {{-- Grades trend chart --}}
+    <x-card title="Évolution des notes" shadow separator>
+        @if($hasGrades)
+        <div class="h-64" wire:ignore x-data x-init="new Chart($refs.grades, @js($gradesChart))">
+            <canvas x-ref="grades"></canvas>
+        </div>
+        @else
+        <div class="text-center py-10 text-base-content/40">
+            <x-icon name="o-chart-bar" class="w-10 h-10 mx-auto mb-2" />
+            <p class="text-sm">Aucune note disponible</p>
+        </div>
+        @endif
     </x-card>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

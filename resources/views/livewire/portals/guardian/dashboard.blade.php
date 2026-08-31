@@ -32,7 +32,43 @@ new #[Layout('layouts.guardian')] class extends Component {
             ->limit(5)
             ->get();
 
-        return compact('guardian', 'students', 'unpaidInvoices', 'recentAnnouncements');
+        // Per-child overview: absences + average grade (%)
+        $childLabels = [];
+        $childAbsences = [];
+        $childAverages = [];
+        foreach ($students as $child) {
+            $childLabels[] = $child->first_name ?? $child->name;
+            $childAbsences[] = \App\Models\AttendanceEntry::where('student_id', $child->id)
+                ->where('status', 'absent')->count();
+            $avg = \App\Models\StudentScore::where('student_id', $child->id)
+                ->whereHas('assessment', fn($q) => $q->where('max_score', '>', 0))
+                ->join('assessments', 'student_scores.assessment_id', '=', 'assessments.id')
+                ->selectRaw('AVG(score / assessments.max_score * 100) as avg_pct')
+                ->value('avg_pct');
+            $childAverages[] = $avg ? round($avg, 1) : 0;
+        }
+
+        $childrenChart = [
+            'type' => 'bar',
+            'data' => [
+                'labels' => $childLabels,
+                'datasets' => [
+                    ['label' => 'Moyenne (%)', 'data' => $childAverages, 'backgroundColor' => '#10b981', 'borderRadius' => 6, 'yAxisID' => 'y'],
+                    ['label' => 'Absences', 'data' => $childAbsences, 'backgroundColor' => '#f43f5e', 'borderRadius' => 6, 'yAxisID' => 'y1'],
+                ],
+            ],
+            'options' => [
+                'responsive' => true, 'maintainAspectRatio' => false,
+                'plugins' => ['legend' => ['position' => 'bottom']],
+                'scales' => [
+                    'y'  => ['beginAtZero' => true, 'max' => 100, 'position' => 'left', 'title' => ['display' => true, 'text' => '%']],
+                    'y1' => ['beginAtZero' => true, 'position' => 'right', 'grid' => ['drawOnChartArea' => false], 'ticks' => ['precision' => 0]],
+                ],
+            ],
+        ];
+        $hasChildren = $students->isNotEmpty();
+
+        return compact('guardian', 'students', 'unpaidInvoices', 'recentAnnouncements', 'childrenChart', 'hasChildren');
     }
 };
 ?>
@@ -113,6 +149,15 @@ new #[Layout('layouts.guardian')] class extends Component {
         </a>
         @endforeach
     </div>
+
+    {{-- Children overview chart --}}
+    @if($hasChildren)
+    <x-card title="{{ __('navigation.my_children') }} — {{ __('navigation.overview') }}" shadow separator>
+        <div class="h-64" wire:ignore x-data x-init="new Chart($refs.children, @js($childrenChart))">
+            <canvas x-ref="children"></canvas>
+        </div>
+    </x-card>
+    @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- My children --}}

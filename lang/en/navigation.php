@@ -82,4 +82,7 @@ return [
     'surveillance_today'    => 'Today\'s Supervision',
     'record_payment'        => 'Record Payment',
     'daily_report'          => 'Daily Report',
+    'days'                  => 'days',
+    'no_data'               => 'No data available',
+    'overview'              => 'Overview',
 ];
