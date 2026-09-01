@@ -276,6 +276,8 @@ Route::middleware(['auth', 'role:super-admin|admin|director|accountant', 'school
         // ── Reports ───────────────────────────────────────────────────────────
         Volt::route('/rapports', 'admin.reports.index')
             ->middleware('can:reports.view')->name('reports.index');
+        Volt::route('/rapports/par-classe', 'admin.reports.by-class')
+            ->middleware('can:reports.view')->name('reports.by-class');
 
         // ── Scheduled Tasks ────────────────────────────────────────────────────
         Route::middleware('can:scheduled-tasks.view')

@@ -486,7 +486,11 @@ new #[Layout('layouts.app')] class extends Component {
 ?>
 
 <div>
-    <x-header title="Rapports & Statistiques" subtitle="Analyse détaillée de l'activité scolaire" separator progress-indicator />
+    <x-header title="Rapports & Statistiques" subtitle="Analyse détaillée de l'activité scolaire" separator progress-indicator>
+        <x-slot:actions>
+            <x-button label="Rapport par classe" icon="o-table-cells" :link="route('admin.reports.by-class')" wire:navigate class="btn-outline btn-sm" />
+        </x-slot:actions>
+    </x-header>
 
     {{-- Tab selector --}}
     <div class="flex flex-wrap items-center gap-2 mb-5">
