@@ -77,7 +77,7 @@
             <x-menu-item title="{{ __('navigation.invoices') }}"       icon="o-document-currency-dollar" link="{{ route('caissier.invoices') }}"  class="text-cyan-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.daily_report') }}"   icon="o-chart-bar-square"         link="{{ route('caissier.report') }}"    class="text-cyan-100 hover:bg-white/10 rounded-lg" />
             <x-menu-separator />
-            <x-menu-item title="{{ __('navigation.profile') }}" icon="o-user-circle"                    link="{{ route('profile.show') }}" class="text-cyan-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item title="{{ __('navigation.profile') }}" icon="o-user-circle"                    link="{{ route('profile.caissier') }}" class="text-cyan-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.logout') }}"  icon="o-arrow-right-start-on-rectangle" link="{{ route('auth.logout') }}" no-wire-navigate class="text-red-300 hover:bg-red-500/20 rounded-lg" />
         </x-menu>
     </x-slot:sidebar>

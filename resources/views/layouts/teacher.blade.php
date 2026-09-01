@@ -81,7 +81,7 @@
             <x-menu-item title="{{ __('navigation.students') }}"    icon="o-user-group"    link="{{ route('teacher.students') }}"    class="text-indigo-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.messages') }}"    icon="o-envelope"      link="{{ route('teacher.messages') }}"    class="text-indigo-100 hover:bg-white/10 rounded-lg" />
             <x-menu-separator />
-            <x-menu-item title="{{ __('navigation.profile') }}" icon="o-user-circle"                    link="{{ route('profile.show') }}" class="text-indigo-100 hover:bg-white/10 rounded-lg" />
+            <x-menu-item title="{{ __('navigation.profile') }}" icon="o-user-circle"                    link="{{ route('profile.teacher') }}" class="text-indigo-100 hover:bg-white/10 rounded-lg" />
             <x-menu-item title="{{ __('navigation.logout') }}"  icon="o-arrow-right-start-on-rectangle" link="{{ route('auth.logout') }}" no-wire-navigate class="text-red-300 hover:bg-red-500/20 rounded-lg" />
         </x-menu>
     </x-slot:sidebar>

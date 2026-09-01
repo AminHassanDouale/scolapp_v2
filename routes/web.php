@@ -72,6 +72,13 @@ Route::middleware(['auth', 'school.active'])
     ->group(function () {
         Volt::route('/',          'profile.show')->name('show');
         Volt::route('/securite', 'profile.security')->name('security');
+        // Role-scoped profile pages: same form, rendered inside each portal's
+        // own layout so users keep their menu (no more "stuck" navigation).
+        Volt::route('/enseignant', 'profile.teacher')->name('teacher');
+        Volt::route('/caissier',   'profile.caissier')->name('caissier');
+        Volt::route('/tuteur',     'profile.guardian')->name('guardian');
+        Volt::route('/eleve',      'profile.student')->name('student');
+        Volt::route('/surveillant','profile.monitor')->name('monitor');
     });
 
 /*
