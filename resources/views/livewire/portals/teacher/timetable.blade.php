@@ -8,6 +8,16 @@ use Illuminate\Support\Carbon;
 new #[Layout('layouts.teacher')] class extends Component {
     public string $viewMode = 'table';
 
+    // Filters
+    public ?int   $filterClassId   = null;
+    public ?int   $filterSubjectId = null;
+    public ?int   $filterDay       = null;
+
+    public function resetFilters(): void
+    {
+        $this->reset(['filterClassId', 'filterSubjectId', 'filterDay']);
+    }
+
     public function with(): array
     {
         $teacher = Teacher::where('user_id', auth()->id())->first();
@@ -20,11 +30,28 @@ new #[Layout('layouts.teacher')] class extends Component {
             4 => 'Jeudi',
         ];
 
-        $allEntries = collect();
-        $slots      = [];
+        $allEntries    = collect();
+        $timeSlots     = [];
+        $classOptions  = [];
+        $subjectOptions = [];
 
         if ($teacher) {
+            // Full set (unfiltered) — used to build the filter option lists
+            $full = TimetableEntry::where('teacher_id', $teacher->id)
+                ->with(['subject', 'template.schoolClass'])
+                ->get();
+
+            $classOptions = $full->map(fn ($e) => $e->template?->schoolClass)
+                ->filter()->unique('id')
+                ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->values()->all();
+            $subjectOptions = $full->map(fn ($e) => $e->subject)
+                ->filter()->unique('id')
+                ->map(fn ($s) => ['id' => $s->id, 'name' => $s->name])->values()->all();
+
             $allEntries = TimetableEntry::where('teacher_id', $teacher->id)
+                ->when($this->filterSubjectId, fn ($q) => $q->where('subject_id', $this->filterSubjectId))
+                ->when($this->filterDay !== null, fn ($q) => $q->where('day_of_week', $this->filterDay))
+                ->when($this->filterClassId, fn ($q) => $q->whereHas('template', fn ($t) => $t->where('school_class_id', $this->filterClassId)))
                 ->with(['subject', 'template.schoolClass', 'roomModel'])
                 ->orderBy('day_of_week')
                 ->orderBy('start_time')
@@ -62,7 +89,7 @@ new #[Layout('layouts.teacher')] class extends Component {
             }
         }
 
-        return compact('entries', 'days', 'teacher', 'timeSlots', 'calEvents', 'allEntries');
+        return compact('entries', 'days', 'teacher', 'timeSlots', 'calEvents', 'allEntries', 'classOptions', 'subjectOptions');
     }
 };
 ?>
@@ -89,9 +116,28 @@ new #[Layout('layouts.teacher')] class extends Component {
         </x-slot:actions>
     </x-header>
 
+    {{-- Filters --}}
+    <x-card shadow class="border-0">
+        <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <x-select label="{{ __('navigation.class') }}" wire:model.live="filterClassId" :options="$classOptions"
+                      placeholder="Toutes les classes" placeholder-value="" icon="o-building-office" />
+            <x-select label="{{ __('navigation.subject') }}" wire:model.live="filterSubjectId" :options="$subjectOptions"
+                      placeholder="Toutes les matières" placeholder-value="" icon="o-book-open" />
+            <x-select label="Jour" wire:model.live="filterDay" :options="[
+                ['id' => 0, 'name' => 'Dimanche'], ['id' => 1, 'name' => 'Lundi'], ['id' => 2, 'name' => 'Mardi'],
+                ['id' => 3, 'name' => 'Mercredi'], ['id' => 4, 'name' => 'Jeudi'],
+            ]" placeholder="Tous les jours" placeholder-value="" icon="o-calendar-days" />
+            <div class="flex items-end">
+                @if($filterClassId || $filterSubjectId || $filterDay !== null)
+                <x-button label="Réinitialiser" icon="o-x-mark" wire:click="resetFilters" class="btn-ghost btn-sm w-full" />
+                @endif
+            </div>
+        </div>
+    </x-card>
+
     @if($entries->isEmpty())
         <x-alert icon="o-information-circle" class="alert-info">
-            Aucun cours planifié pour le moment.
+            Aucun cours ne correspond à ces filtres.
         </x-alert>
     @else
 
