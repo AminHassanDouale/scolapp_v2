@@ -47,7 +47,8 @@ class RolePermissionSeeder extends Seeder
         // Portal roles (teacher, monitor, guardian, student, caissier) are blocked
         // from /admin routes by role middleware, so only school-level roles need
         // these permissions. Portal access is controlled by route role middleware.
-        'academic.view'   => ['admin', 'director', 'accountant'],
+        // Comptable is finance-only: no class/room management in their menu.
+        'academic.view'   => ['admin', 'director'],
         'academic.manage' => ['admin', 'director'],
 
         // ── Students ──────────────────────────────────────────────────────────
