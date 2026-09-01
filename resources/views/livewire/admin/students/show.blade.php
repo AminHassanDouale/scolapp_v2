@@ -21,6 +21,10 @@ new #[Layout('layouts.app')] class extends Component {
     public Student $student;
     public string  $activeTab = 'info';
 
+    // Bulletins tab filters
+    public ?int   $bulletinYearId = null;
+    public string $bulletinPeriod = '';
+
     public function mount(string $uuid): void
     {
         $this->student = Student::where('school_id', auth()->user()->school_id)
@@ -108,29 +112,82 @@ new #[Layout('layouts.app')] class extends Component {
             'overdue'   => $this->student->invoices()->where('status', 'overdue')->count(),
         ];
 
+        $allEnrollments = Enrollment::where('student_id', $this->student->id)
+            ->with('academicYear', 'schoolClass')
+            ->orderByDesc('enrolled_at')
+            ->get();
+
+        $invoicesByYear = $this->student->invoices()
+            ->with('academicYear')
+            ->get()
+            ->groupBy('academic_year_id')
+            ->map(fn ($invs) => (object) [
+                'year'     => $invs->first()->academicYear,
+                'total'    => (float) $invs->sum('total'),
+                'paid'     => (float) $invs->sum('paid_total'),
+                'balance'  => (float) $invs->sum('balance_due'),
+                'invoices' => $invs->sortByDesc('issue_date'),
+            ])
+            ->sortByDesc(fn ($g) => optional($g->year)->start_date)
+            ->values();
+
+        // ── Distinct academic years relevant to this student (enrollments ∪ invoices)
+        $years = collect();
+        foreach ($allEnrollments as $e) { if ($e->academicYear) $years->put($e->academicYear->id, $e->academicYear); }
+        foreach ($invoicesByYear as $g) { if ($g->year) $years->put($g->year->id, $g->year); }
+        $years = $years->values()->sortByDesc(fn ($y) => $y->start_date)->values();
+
+        // ── Confirmed payments bucketed by "Y-m" for the monthly grid
+        $paidByMonth = $this->student->payments()
+            ->where('status', 'confirmed')
+            ->get(['amount', 'payment_date'])
+            ->groupBy(fn ($p) => optional($p->payment_date)->format('Y-m'))
+            ->map(fn ($grp) => (float) $grp->sum('amount'));
+
+        // Monthly grid per year (school year: 12 months from the year's start_date)
+        $monthlyByYear = $years->map(function ($y) use ($paidByMonth) {
+            $start  = \Illuminate\Support\Carbon::parse($y->start_date)->startOfMonth();
+            $months = [];
+            for ($i = 0; $i < 12; $i++) {
+                $m   = (clone $start)->addMonths($i);
+                $key = $m->format('Y-m');
+                $months[] = ['label' => ucfirst($m->isoFormat('MMM')), 'amount' => $paidByMonth[$key] ?? 0.0];
+            }
+            return (object) [
+                'year'   => $y,
+                'months' => $months,
+                'total'  => array_sum(array_column($months, 'amount')),
+            ];
+        });
+
+        // ── Report cards (bulletins) grouped by academic year, with filters
+        $periodOrder = ['trimester_1', 'semester_1', 'trimester_2', 'trimester_3', 'semester_2', 'annual'];
+        $reportCardsByYear = \App\Models\ReportCard::where('student_id', $this->student->id)
+            ->with('academicYear')
+            ->when($this->bulletinYearId, fn ($q) => $q->where('academic_year_id', $this->bulletinYearId))
+            ->when($this->bulletinPeriod, fn ($q) => $q->where('period', $this->bulletinPeriod))
+            ->get()
+            ->groupBy('academic_year_id')
+            ->map(fn ($cards) => (object) [
+                'year'  => $cards->first()->academicYear,
+                'cards' => $cards->sortBy(fn ($c) => array_search($c->period?->value, $periodOrder)),
+            ])
+            ->sortByDesc(fn ($g) => optional($g->year)->start_date)
+            ->values();
+
         return [
             'student'         => $this->student,
             'enrollment'      => $enrollment,
             'financeSummary'  => $financeSummary,
-            'allEnrollments'  => Enrollment::where('student_id', $this->student->id)
-                ->with('academicYear', 'schoolClass')
-                ->orderByDesc('enrolled_at')
-                ->get(),
-            'invoices' => $this->student->invoices,
-            'payments' => $this->student->payments,
-            'invoicesByYear' => $this->student->invoices()
-                ->with('academicYear')
-                ->get()
-                ->groupBy('academic_year_id')
-                ->map(fn ($invs) => (object) [
-                    'year'     => $invs->first()->academicYear,
-                    'total'    => (float) $invs->sum('total'),
-                    'paid'     => (float) $invs->sum('paid_total'),
-                    'balance'  => (float) $invs->sum('balance_due'),
-                    'invoices' => $invs->sortByDesc('issue_date'),
-                ])
-                ->sortByDesc(fn ($g) => optional($g->year)->start_date)
-                ->values(),
+            'allEnrollments'  => $allEnrollments,
+            'invoices'        => $this->student->invoices,
+            'payments'        => $this->student->payments,
+            'invoicesByYear'  => $invoicesByYear,
+            'monthlyByYear'   => $monthlyByYear,
+            'reportCardsByYear' => $reportCardsByYear,
+            'bulletinYears'   => $years->map(fn ($y) => ['id' => $y->id, 'name' => $y->name])->all(),
+            'periodOptions'   => collect(\App\Enums\ReportPeriod::cases())
+                ->map(fn ($p) => ['id' => $p->value, 'name' => $p->label()])->all(),
         ];
     }
 };
@@ -345,7 +402,35 @@ new #[Layout('layouts.app')] class extends Component {
 
         <x-tab name="finance" label="Finance" icon="o-banknotes">
             <div class="mt-4 space-y-6">
-                <h3 class="font-bold text-lg">Factures par année scolaire</h3>
+
+                {{-- Monthly payments per academic year --}}
+                <h3 class="font-bold text-lg">Paiements par mois</h3>
+                @forelse($monthlyByYear as $mg)
+                <x-card class="border border-base-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <x-icon name="o-calendar-days" class="w-5 h-5 text-primary" />
+                            <span class="font-bold">{{ $mg->year?->name ?? 'Sans année scolaire' }}</span>
+                            @if($mg->year?->is_current)<x-badge value="Courante" class="badge-primary badge-sm" />@endif
+                        </div>
+                        <span class="text-sm">Total réglé : <b class="text-green-600">{{ number_format($mg->total, 0, ',', ' ') }} DJF</b></span>
+                    </div>
+                    <div class="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                        @foreach($mg->months as $month)
+                        <div class="rounded-xl border p-2.5 text-center {{ $month['amount'] > 0 ? 'border-green-200 bg-green-50' : 'border-base-200 bg-base-100' }}">
+                            <p class="text-xs uppercase tracking-wide text-base-content/50">{{ $month['label'] }}</p>
+                            <p class="font-bold text-sm {{ $month['amount'] > 0 ? 'text-green-700' : 'text-base-content/30' }}">
+                                {{ $month['amount'] > 0 ? number_format($month['amount'], 0, ',', ' ') : '—' }}
+                            </p>
+                        </div>
+                        @endforeach
+                    </div>
+                </x-card>
+                @empty
+                <x-alert icon="o-information-circle" class="alert-info">Aucun paiement enregistré.</x-alert>
+                @endforelse
+
+                <h3 class="font-bold text-lg pt-2">Factures par année scolaire</h3>
 
                 @forelse($invoicesByYear as $group)
                 @php $pct = $group->total > 0 ? min(100, round($group->paid / $group->total * 100)) : 100; @endphp
@@ -392,6 +477,63 @@ new #[Layout('layouts.app')] class extends Component {
                 </x-card>
                 @empty
                 <x-alert icon="o-information-circle" class="alert-info">Aucune facture.</x-alert>
+                @endforelse
+            </div>
+        </x-tab>
+
+        <x-tab name="bulletins" label="Bulletins" icon="o-academic-cap">
+            <div class="mt-4 space-y-6">
+                {{-- Filters --}}
+                <div class="flex flex-wrap items-end gap-3">
+                    <x-select label="Année scolaire" wire:model.live="bulletinYearId" :options="$bulletinYears"
+                              placeholder="Toutes les années" placeholder-value="" class="w-52" />
+                    <x-select label="Période" wire:model.live="bulletinPeriod" :options="$periodOptions"
+                              placeholder="Toutes les périodes" placeholder-value="" class="w-52" />
+                    @if($bulletinYearId || $bulletinPeriod)
+                    <x-button label="Réinitialiser" icon="o-x-mark" class="btn-ghost btn-sm"
+                              wire:click="$set('bulletinYearId', null); $set('bulletinPeriod', '')" />
+                    @endif
+                </div>
+
+                {{-- Timeline: one column per academic year, periods as milestones --}}
+                @forelse($reportCardsByYear as $group)
+                <x-card class="border border-base-200">
+                    <div class="flex items-center gap-2 mb-4">
+                        <x-icon name="o-calendar-days" class="w-5 h-5 text-primary" />
+                        <span class="font-bold">{{ $group->year?->name ?? 'Sans année scolaire' }}</span>
+                        @if($group->year?->is_current)<x-badge value="Année courante" class="badge-primary badge-sm" />@endif
+                    </div>
+
+                    <div class="relative pl-6">
+                        {{-- vertical line --}}
+                        <div class="absolute left-2 top-1 bottom-1 w-0.5 bg-base-200"></div>
+                        @foreach($group->cards as $card)
+                        <div class="relative mb-4 last:mb-0">
+                            <div class="absolute -left-[18px] top-1.5 w-3 h-3 rounded-full ring-4 ring-base-100 {{ $card->is_published ? 'bg-green-500' : 'bg-amber-400' }}"></div>
+                            <div class="flex items-center justify-between gap-3 p-3 bg-base-100 rounded-xl border border-base-200">
+                                <div>
+                                    <p class="font-semibold text-sm">{{ $card->period?->label() ?? '—' }}</p>
+                                    <p class="text-xs text-base-content/60">
+                                        Moyenne : <b>{{ $card->average !== null ? number_format((float)$card->average, 2, ',', ' ') : '—' }}</b>
+                                        @if($card->rank) · Rang : <b>{{ $card->rank }}@if($card->class_size)/{{ $card->class_size }}@endif</b>@endif
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <x-badge :value="$card->is_published ? 'Publié' : 'Brouillon'"
+                                             :class="$card->is_published ? 'badge-success badge-sm' : 'badge-warning badge-sm'" />
+                                    <a href="{{ route('admin.report-cards.show', $card->uuid) }}" wire:navigate>
+                                        <x-button label="Voir / Imprimer" icon="o-printer" class="btn-ghost btn-xs" />
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </x-card>
+                @empty
+                <x-alert icon="o-information-circle" class="alert-info">
+                    Aucun bulletin généré pour cet élève@if($bulletinYearId || $bulletinPeriod) avec ces filtres@endif.
+                </x-alert>
                 @endforelse
             </div>
         </x-tab>
