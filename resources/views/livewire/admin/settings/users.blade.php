@@ -6,6 +6,7 @@ use Livewire\Attributes\Layout;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 new #[Layout('layouts.app')] class extends Component {
     use Toast, WithPagination;
@@ -24,6 +25,19 @@ new #[Layout('layouts.app')] class extends Component {
     public string $cf_phone      = '';
     public string $cf_whatsapp   = '';
     public bool   $cf_is_blocked = false;
+    public bool   $cf_send_credentials = true;
+
+    /** Portal login URL + human label per role, for the credentials message. */
+    private const ROLE_PORTAL = [
+        'teacher'    => ['/teacher',  'Enseignant'],
+        'monitor'    => ['/monitor',  'Surveillant'],
+        'guardian'   => ['/guardian', 'Parent'],
+        'student'    => ['/student',  'Élève'],
+        'caissier'   => ['/caissier', 'Caissier'],
+        'accountant' => ['/admin',    'Comptable'],
+        'director'   => ['/admin',    'Directeur'],
+        'admin'      => ['/admin',    'Administrateur'],
+    ];
 
     public function updatingSearch(): void { $this->resetPage(); }
 
@@ -32,14 +46,17 @@ new #[Layout('layouts.app')] class extends Component {
         $this->validate([
             'cf_name'     => 'required|string|max:200',
             'cf_email'    => 'required|email|unique:users,email',
-            'cf_password' => 'required|string|min:8',
+            'cf_password' => 'nullable|string|min:8',
             'cf_role'     => 'required|string',
         ]);
+
+        // Auto-generate a password when left blank so credentials can be sent
+        $plainPassword = $this->cf_password ?: Str::password(12, symbols: false);
 
         $user = User::create([
             'name'             => $this->cf_name,
             'email'            => $this->cf_email,
-            'password'         => Hash::make($this->cf_password),
+            'password'         => Hash::make($plainPassword),
             'phone'            => $this->cf_phone ?: null,
             'whatsapp_number'  => $this->cf_whatsapp ?: null,
             'school_id'        => auth()->user()->school_id,
@@ -47,9 +64,18 @@ new #[Layout('layouts.app')] class extends Component {
 
         $user->assignRole($this->cf_role);
 
+        if ($this->cf_send_credentials) {
+            [$path, $label] = self::ROLE_PORTAL[$this->cf_role] ?? ['/login', ''];
+            app(\App\Services\CredentialsNotifier::class)
+                ->send($user, $plainPassword, $label, url($path));
+        }
+
         $this->resetForm();
         $this->showCreate = false;
-        $this->success('Utilisateur créé.', position: 'toast-top toast-end', icon: 'o-plus-circle', css: 'alert-success', timeout: 3000);
+        $this->success(
+            $this->cf_send_credentials ? 'Utilisateur créé — identifiants envoyés (email + WhatsApp).' : 'Utilisateur créé.',
+            position: 'toast-top toast-end', icon: 'o-plus-circle', css: 'alert-success', timeout: 3500
+        );
     }
 
     public function editUser(int $id): void
@@ -130,6 +156,7 @@ new #[Layout('layouts.app')] class extends Component {
         $this->cf_phone = $this->cf_whatsapp = '';
         $this->cf_role = 'admin';
         $this->cf_is_blocked = false;
+        $this->cf_send_credentials = true;
         $this->editId = 0;
     }
 
@@ -253,7 +280,8 @@ new #[Layout('layouts.app')] class extends Component {
         <x-form wire:submit="createUser" class="space-y-4">
             <x-input label="Nom *" wire:model="cf_name" required />
             <x-input label="Email *" wire:model="cf_email" type="email" required />
-            <x-input label="Mot de passe *" wire:model="cf_password" type="password" required />
+            <x-input label="Mot de passe" wire:model="cf_password" type="password"
+                     hint="Laissez vide pour générer automatiquement" />
             <x-select label="Rôle *" wire:model="cf_role"
                       :options="$roleOptions" option-value="id" option-label="name" />
             <div class="grid grid-cols-2 gap-4">
@@ -262,6 +290,13 @@ new #[Layout('layouts.app')] class extends Component {
                 <x-input label="WhatsApp" wire:model="cf_whatsapp"
                          placeholder="+253 77 00 00 00" icon="o-chat-bubble-left-ellipsis" />
             </div>
+            <label class="flex items-center gap-3 p-3 bg-base-200 rounded-xl cursor-pointer">
+                <x-checkbox wire:model="cf_send_credentials" />
+                <div>
+                    <p class="text-sm font-medium">Envoyer les identifiants</p>
+                    <p class="text-xs text-base-content/50">Par email et WhatsApp au nouvel utilisateur</p>
+                </div>
+            </label>
             <x-slot:actions>
                 <x-button label="Annuler" @click="$wire.showCreate = false" class="btn-ghost" />
                 <x-button label="Créer" type="submit" icon="o-check" class="btn-primary" spinner />

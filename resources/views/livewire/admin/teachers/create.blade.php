@@ -82,7 +82,7 @@ new #[Layout('layouts.app')] class extends Component {
             $teacher->update(['user_id' => $user->id]);
         }
 
-        // ── Send welcome email with credentials ───────────────────────────────
+        // ── Send welcome email + WhatsApp with credentials ────────────────────
         if ($teacher->email) {
             try {
                 $school = School::findOrFail(auth()->user()->school_id);
@@ -92,6 +92,12 @@ new #[Layout('layouts.app')] class extends Component {
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('TeacherWelcomeMail failed: ' . $e->getMessage());
                 session()->flash('success', 'Enseignant créé avec succès.');
+            }
+
+            // WhatsApp credentials (only when a fresh account/password was created)
+            if (isset($user) && $plainPassword) {
+                app(\App\Services\CredentialsNotifier::class)
+                    ->sendWhatsappOnly($user, $plainPassword, 'Enseignant', url('/teacher'), $teacher);
             }
         } else {
             session()->flash('success', 'Enseignant créé avec succès.');
