@@ -3,9 +3,12 @@ use App\Enums\AttachmentCategory;
 use App\Models\Teacher;
 use App\Models\Assessment;
 use App\Models\Attachment;
+use App\Models\User;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Mary\Traits\Toast;
 
 new #[Layout('layouts.app')] class extends Component {
@@ -30,6 +33,48 @@ new #[Layout('layouts.app')] class extends Component {
         $this->teacher->update(['is_active' => !$this->teacher->is_active]);
         $this->teacher->refresh();
         $this->success($this->teacher->is_active ? 'Enseignant activé.' : 'Enseignant désactivé.', position: 'toast-top toast-end', icon: 'o-bolt', css: 'alert-success', timeout: 3000);
+    }
+
+    public function resetTeacherCredentials(): void
+    {
+        abort_unless(auth()->user()->hasRole(['super-admin', 'admin', 'director']), 403);
+
+        if (! $this->teacher->email) {
+            $this->error("Cet enseignant n'a pas d'adresse email.", position: 'toast-top toast-center', icon: 'o-x-circle', css: 'alert-error', timeout: 4000);
+            return;
+        }
+
+        $password = Str::password(12, symbols: false);
+
+        // Create the login account if it doesn't exist yet, otherwise reset it
+        if (! $this->teacher->user_id) {
+            $user = User::create([
+                'uuid'            => (string) Str::uuid(),
+                'school_id'       => auth()->user()->school_id,
+                'name'            => $this->teacher->full_name,
+                'email'           => $this->teacher->email,
+                'password'        => Hash::make($password),
+                'phone'           => $this->teacher->phone,
+                'whatsapp_number' => $this->teacher->whatsapp_number,
+                'ui_lang'         => 'fr',
+                'timezone'        => 'Africa/Djibouti',
+            ]);
+            $user->assignRole('teacher');
+            $this->teacher->update(['user_id' => $user->id]);
+            $this->teacher->refresh();
+        } else {
+            $user = $this->teacher->user;
+            $user->update(['password' => Hash::make($password)]);
+        }
+
+        app(\App\Services\CredentialsNotifier::class)
+            ->send($user, $password, 'Enseignant', url('/teacher'), $this->teacher);
+
+        $this->success(
+            "Identifiants envoyés à {$this->teacher->email}",
+            "Par email + WhatsApp",
+            position: 'toast-top toast-end', icon: 'o-paper-airplane', css: 'alert-success', timeout: 4000
+        );
     }
 
     public function deleteDocument(int $id): void
@@ -84,6 +129,13 @@ new #[Layout('layouts.app')] class extends Component {
                       wire:click="$set('showDocsDrawer', true)"
                       class="btn-outline"
                       :badge="$documentsCount ?: null" badge-classes="badge-warning" />
+            @if($teacher->email && auth()->user()->hasRole(['super-admin', 'admin', 'director']))
+            <x-button label="{{ $teacher->user_id ? 'Réinitialiser le mot de passe' : 'Créer le compte & envoyer' }}"
+                      icon="{{ $teacher->user_id ? 'o-arrow-path' : 'o-paper-airplane' }}"
+                      wire:click="resetTeacherCredentials"
+                      wire:confirm="Générer un nouveau mot de passe et l'envoyer par email + WhatsApp ?"
+                      class="btn-outline text-info" spinner="resetTeacherCredentials" />
+            @endif
             <x-button label="Modifier" icon="o-pencil"
                       :link="route('admin.teachers.edit', $teacher->uuid)"
                       class="btn-primary" wire:navigate />
