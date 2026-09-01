@@ -251,6 +251,26 @@
     <div style="margin-top:12px;font-size:9px;color:#64748b;font-style:italic;">Note : {{ $payment->notes }}</div>
     @endif
 
+    {{-- Signatures (printed receipts only, never on email/WhatsApp copies) --}}
+    @if($signatures ?? false)
+    <table style="width:100%;border-collapse:collapse;margin-top:36px;">
+        <tr>
+            <td style="width:50%;text-align:center;padding:0 20px;vertical-align:bottom;">
+                <div style="border-top:1px solid #94a3b8;padding-top:5px;margin-top:44px;">
+                    <div style="font-size:9px;font-weight:bold;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">Le caissier</div>
+                    <div style="font-size:8px;color:#94a3b8;">Signature &amp; cachet</div>
+                </div>
+            </td>
+            <td style="width:50%;text-align:center;padding:0 20px;vertical-align:bottom;">
+                <div style="border-top:1px solid #94a3b8;padding-top:5px;margin-top:44px;">
+                    <div style="font-size:9px;font-weight:bold;color:#475569;text-transform:uppercase;letter-spacing:0.05em;">Le titulaire / parent</div>
+                    <div style="font-size:8px;color:#94a3b8;">Signature</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    @endif
+
     {{-- Footer --}}
     <div class="footer">
         <div class="footer-left">

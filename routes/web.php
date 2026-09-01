@@ -232,6 +232,7 @@ Route::middleware(['auth', 'role:super-admin|admin|director|accountant', 'school
                     Volt::route('/',        'admin.finance.payments.index')->name('index');
                     Volt::route('/suivi',   'admin.finance.payments.suivi')->name('suivi');
                     Volt::route('/nouveau', 'admin.finance.payments.create')->middleware('can:payments.create')->name('create');
+                    Route::get('/{uuid}/recu', [\App\Http\Controllers\Finance\ReceiptController::class, 'print'])->name('receipt');
                     Volt::route('/{uuid}',  'admin.finance.payments.show')->name('show');
                 });
 
@@ -383,4 +384,5 @@ Route::middleware(['auth', 'role:caissier|super-admin|admin', 'school.active'])
         Volt::route('/paiement', 'portals.caissier.payment')->name('payment');
         Volt::route('/factures', 'portals.caissier.invoices')->name('invoices');
         Volt::route('/rapport',  'portals.caissier.report')->name('report');
+        Route::get('/recu/{uuid}', [\App\Http\Controllers\Finance\ReceiptController::class, 'print'])->name('receipt');
     });

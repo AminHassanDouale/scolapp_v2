@@ -267,8 +267,28 @@ new #[Layout('layouts.empty')] class extends Component {
             </div>
             @endif
 
+            {{-- Signatures (print / PDF only) --}}
+            <div class="print-only" style="display:none;margin-top:32px;">
+                <table style="width:100%;border-collapse:collapse;">
+                    <tr>
+                        <td style="width:50%;text-align:center;padding:0 24px;vertical-align:bottom;">
+                            <div style="border-top:1px solid #94a3b8;padding-top:6px;margin-top:56px;">
+                                <p style="font-size:0.72rem;font-weight:700;color:#475569;margin:0;text-transform:uppercase;letter-spacing:0.05em;">Le caissier</p>
+                                <p style="font-size:0.68rem;color:#94a3b8;margin:2px 0 0;">Signature &amp; cachet</p>
+                            </div>
+                        </td>
+                        <td style="width:50%;text-align:center;padding:0 24px;vertical-align:bottom;">
+                            <div style="border-top:1px solid #94a3b8;padding-top:6px;margin-top:56px;">
+                                <p style="font-size:0.72rem;font-weight:700;color:#475569;margin:0;text-transform:uppercase;letter-spacing:0.05em;">Le titulaire / parent</p>
+                                <p style="font-size:0.68rem;color:#94a3b8;margin:2px 0 0;">Signature</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
             {{-- Footer --}}
-            <div style="border-top:1px solid #e2e8f0;padding-top:14px;display:flex;align-items:flex-end;justify-content:space-between;">
+            <div style="border-top:1px solid #e2e8f0;padding-top:14px;margin-top:24px;display:flex;align-items:flex-end;justify-content:space-between;">
                 <div style="font-size:0.7rem;color:#94a3b8;line-height:1.7;">
                     <p style="margin:0;">{{ $invoice->school->name }}@if($invoice->school->address) — {{ $invoice->school->address }}@endif</p>
                     <p style="margin:0;">Généré le {{ now()->format('d/m/Y à H:i') }}</p>

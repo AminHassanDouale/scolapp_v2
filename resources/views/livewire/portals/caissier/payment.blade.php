@@ -26,6 +26,8 @@ new #[Layout('layouts.caissier')] class extends Component {
     public array $students         = [];
     public ?int $selectedStudentId = null;
     public array $studentInvoices  = [];
+    public ?string $lastPaymentUuid = null;
+    public string $lastPaymentLabel = '';
 
     #[Rule('required|numeric|min:1')]
     public float $amount = 0;
@@ -176,7 +178,7 @@ new #[Layout('layouts.caissier')] class extends Component {
             $screenshotPath = $this->proofScreenshot->store('payment-proofs', 'public');
         }
 
-        DB::transaction(function () use ($screenshotPath) {
+        $payment = DB::transaction(function () use ($screenshotPath) {
             $meta = array_filter([
                 'proof_screenshot' => $screenshotPath,
                 'provider'         => $this->paymentMethod === 'mobile_money' ? $this->mmProvider : null,
@@ -218,7 +220,15 @@ new #[Layout('layouts.caissier')] class extends Component {
                 'balance_due' => $newBalance,
                 'status'      => $newStatus,
             ]);
+
+            return $payment;
         });
+
+        // Send the receipt by email + WhatsApp (no signature fields on these copies)
+        $this->sendReceipt($payment);
+
+        $this->lastPaymentUuid  = $payment->uuid;
+        $this->lastPaymentLabel = number_format($this->amount, 0, ',', ' ') . ' DJF · ' . ($this->invoice->reference ?? '');
 
         $this->success(
             "Paiement de " . number_format($this->amount, 0, ',', ' ') . " DJF enregistré !",
@@ -228,6 +238,28 @@ new #[Layout('layouts.caissier')] class extends Component {
 
         $this->reset(['invoice', 'invoiceUuid', 'amount', 'notes', 'selectedStudentId', 'studentInvoices', 'proofScreenshot']);
         $this->paymentMethod = 'cash';
+    }
+
+    private function sendReceipt(Payment $payment): void
+    {
+        try {
+            $payment->load(['paymentAllocations.invoice.academicYear', 'school', 'student.guardians']);
+            $school  = $payment->school;
+            foreach ($payment->student?->guardians ?? [] as $g) {
+                if ($g->email) {
+                    \Illuminate\Support\Facades\Mail::to($g->email)
+                        ->send(new \App\Mail\PaymentReceivedMail($payment, $g));
+                }
+                $waText = "✅ *Reçu de paiement* — " . ($school?->name ?? config('app.name')) . "\n"
+                    . "Référence : {$payment->reference}\n"
+                    . "Montant : " . number_format((float) $payment->amount, 0, ',', ' ') . " DJF\n"
+                    . "Reste à payer (année scolaire) : " . number_format($payment->academicYearBalance(), 0, ',', ' ') . " DJF\n"
+                    . "Merci.";
+                app(\App\Services\WhatsAppService::class)->notifyModel($g, $waText);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Caissier receipt send failed: ' . $e->getMessage());
+        }
     }
 
     public function with(): array
@@ -255,6 +287,18 @@ new #[Layout('layouts.caissier')] class extends Component {
     </x-header>
 
     <div class="max-w-2xl mx-auto space-y-6">
+
+        {{-- Last receipt: print with signatures --}}
+        @if($lastPaymentUuid && !$invoice)
+        <x-alert icon="o-check-circle" class="alert-success">
+            <div class="flex items-center justify-between w-full gap-3">
+                <span>Paiement enregistré ({{ $lastPaymentLabel }}). Reçu envoyé par email + WhatsApp.</span>
+                <a href="{{ route('caissier.receipt', $lastPaymentUuid) }}" target="_blank">
+                    <x-button label="Imprimer le reçu" icon="o-printer" class="btn-sm btn-success" />
+                </a>
+            </div>
+        </x-alert>
+        @endif
 
         {{-- Step 1: Search student --}}
         @if(!$invoice)

@@ -50,6 +50,9 @@ new #[Layout('layouts.app')] class extends Component {
             </div>
         </x-slot:title>
         <x-slot:actions>
+            <a href="{{ route('admin.finance.payments.receipt', $payment->uuid) }}" target="_blank">
+                <x-button label="Imprimer le reçu" icon="o-printer" class="btn-outline" />
+            </a>
             @if($payment->status === PaymentStatus::PENDING)
             <x-button label="Confirmer" icon="o-check"
                       wire:click="confirmPayment"
