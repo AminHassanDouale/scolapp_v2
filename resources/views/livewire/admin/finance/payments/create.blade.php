@@ -16,6 +16,7 @@ new #[Layout('layouts.app')] class extends Component {
     public int    $studentId          = 0;
     public int    $invoiceId          = 0;
     public float  $amount             = 0;
+    public string $paymentType        = 'full';   // full | partial
     public string $method             = 'cash';
     public string $paymentDate        = '';
     public string $notes              = '';
@@ -43,8 +44,17 @@ new #[Layout('layouts.app')] class extends Component {
         if ($this->invoiceId) {
             $invoice = Invoice::find($this->invoiceId);
             if ($invoice) {
-                $this->amount = $invoice->balance_due;
+                $this->amount      = $invoice->balance_due;
+                $this->paymentType = 'full';
             }
+        }
+    }
+
+    public function updatedPaymentType(): void
+    {
+        // "Total" locks the amount to the full remaining balance
+        if ($this->paymentType === 'full' && $this->invoiceId) {
+            $this->amount = (float) (Invoice::find($this->invoiceId)?->balance_due ?? $this->amount);
         }
     }
 
@@ -282,11 +292,27 @@ new #[Layout('layouts.app')] class extends Component {
                 <div>
                     <p class="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-3">2 — Détails du paiement</p>
                     <div class="space-y-4">
+                        {{-- Total vs partial --}}
+                        @if($selectedInvoice)
+                        <div>
+                            <label class="text-sm font-semibold block mb-1.5">Type de paiement</label>
+                            <div class="join">
+                                <button type="button" wire:click="$set('paymentType','full')"
+                                    class="join-item btn btn-sm {{ $paymentType === 'full' ? 'btn-primary' : 'btn-ghost' }}">Paiement total</button>
+                                <button type="button" wire:click="$set('paymentType','partial')"
+                                    class="join-item btn btn-sm {{ $paymentType === 'partial' ? 'btn-primary' : 'btn-ghost' }}">Paiement partiel</button>
+                            </div>
+                            @if($paymentType === 'partial')
+                            <p class="text-xs text-amber-600 mt-1">Le solde restant pourra être réglé plus tard.</p>
+                            @endif
+                        </div>
+                        @endif
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <x-input label="Montant (DJF) *" wire:model.live="amount"
                                          type="number" min="1" step="1" icon="o-currency-dollar"
-                                         :max="$selectedInvoice?->balance_due ?? ''" required />
+                                         :max="$selectedInvoice?->balance_due ?? ''"
+                                         :readonly="$paymentType === 'full' && $selectedInvoice" required />
                                 @if($selectedInvoice && $amount > $selectedInvoice->balance_due)
                                 <p class="text-xs text-error mt-1 flex items-center gap-1">
                                     <x-icon name="o-exclamation-triangle" class="w-3 h-3"/>
