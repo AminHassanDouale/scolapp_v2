@@ -16,6 +16,7 @@ new #[Layout('layouts.app')] class extends Component {
     public int    $classFilter   = 0;
     public string $periodFilter  = '';
     public int    $yearFilter    = 0;
+    public string $statusFilter  = '';
     public bool   $showGenerate  = false;
 
     // Generate form
@@ -36,6 +37,7 @@ new #[Layout('layouts.app')] class extends Component {
     public function updatingSearch(): void       { $this->resetPage(); }
     public function updatingClassFilter(): void  { $this->resetPage(); }
     public function updatingPeriodFilter(): void { $this->resetPage(); }
+    public function updatingStatusFilter(): void { $this->resetPage(); }
 
     public function generateReportCards(): void
     {
@@ -100,6 +102,7 @@ new #[Layout('layouts.app')] class extends Component {
                 $q->whereHas('enrollment', fn($e) => $e->where('school_class_id', $this->classFilter))
             )
             ->when($this->periodFilter, fn($q) => $q->where('period', $this->periodFilter))
+            ->when($this->statusFilter, fn($q) => $q->where('status', $this->statusFilter))
             ->when($this->yearFilter, fn($q) =>
                 $q->whereHas('enrollment', fn($e) => $e->where('academic_year_id', $this->yearFilter))
             )
@@ -130,6 +133,7 @@ new #[Layout('layouts.app')] class extends Component {
             'classes'        => $classes,
             'academicYears'  => AcademicYear::where('school_id', $schoolId)->orderByDesc('start_date')->get(),
             'periods'        => collect(ReportPeriod::cases())->map(fn($p) => ['id' => $p->value, 'name' => $p->label()])->all(),
+            'statuses'       => collect(\App\Enums\ReportCardStatus::cases())->map(fn($s) => ['id' => $s->value, 'name' => $s->label()])->all(),
         ];
     }
 };
@@ -192,6 +196,9 @@ new #[Layout('layouts.app')] class extends Component {
         <x-select wire:model.live="periodFilter"
                   :options="$periods" option-value="id" option-label="name"
                   placeholder="Toutes les périodes" placeholder-value="" class="select-sm w-44" />
+        <x-select wire:model.live="statusFilter"
+                  :options="$statuses" option-value="id" option-label="name"
+                  placeholder="Tous les statuts" placeholder-value="" class="select-sm w-44" />
 
         @if($classFilter && $periodFilter)
         <x-button label="Publier tout" icon="o-eye" wire:click="publishAll"
@@ -276,11 +283,8 @@ new #[Layout('layouts.app')] class extends Component {
                     {{ $rc->class_average !== null ? number_format($rc->class_average, 2) : '—' }}
                 </td>
                 <td>
-                    @if($rc->is_published)
-                    <x-badge value="Publié" class="badge-success badge-sm" />
-                    @else
-                    <x-badge value="Brouillon" class="badge-ghost badge-sm" />
-                    @endif
+                    @php $rcst = $rc->statusEnum(); @endphp
+                    <x-badge :value="$rcst->label()" class="badge-{{ $rcst->color() }} badge-sm" />
                 </td>
                 <td>
                     <div class="flex gap-1">
