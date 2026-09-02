@@ -16,6 +16,10 @@ new #[Layout('layouts.app')] class extends Component {
     public string $general_comment = '';
     public string $teacher_comment = '';
 
+    // Workflow
+    public bool   $showReject   = false;
+    public string $rejectReason = '';
+
     public function mount(string $uuid): void
     {
         $this->reportCard = ReportCard::where('uuid', $uuid)
@@ -24,6 +28,7 @@ new #[Layout('layouts.app')] class extends Component {
                 'enrollment.schoolClass.grade',
                 'enrollment.academicYear',
                 'subjectGrades.subject',
+                'approvals.user',
             ])
             ->firstOrFail();
 
@@ -34,6 +39,57 @@ new #[Layout('layouts.app')] class extends Component {
 
         $this->general_comment = $this->reportCard->general_comment ?? '';
         $this->teacher_comment = $this->reportCard->teacher_comment ?? '';
+    }
+
+    public function advanceWorkflow(): void
+    {
+        $user = auth()->user();
+        abort_unless($this->reportCard->canAdvance($user), 403);
+
+        $newStatus = $this->reportCard->advance($user);
+        $this->reportCard->refresh()->load('approvals.user');
+
+        // Publishing notifies the guardians (email + WhatsApp)
+        if ($newStatus === \App\Enums\ReportCardStatus::PUBLISHED) {
+            $this->notifyGuardiansPublished();
+        }
+
+        $this->success('Bulletin : ' . $newStatus->label() . '.', position: 'toast-top toast-end', icon: 'o-check-circle', css: 'alert-success', timeout: 3000);
+    }
+
+    public function rejectWorkflow(): void
+    {
+        $user = auth()->user();
+        abort_unless($this->reportCard->canReject($user), 403);
+        $this->validate(['rejectReason' => 'required|string|min:5'], [], ['rejectReason' => 'motif']);
+
+        $this->reportCard->reject($user, $this->rejectReason);
+        $this->reportCard->refresh()->load('approvals.user');
+        $this->reset(['showReject', 'rejectReason']);
+
+        $this->warning('Bulletin rejeté — retourné en brouillon.', position: 'toast-top toast-end', icon: 'o-x-circle', css: 'alert-warning', timeout: 3000);
+    }
+
+    private function notifyGuardiansPublished(): void
+    {
+        $student   = $this->reportCard->enrollment?->student;
+        $guardians = $student?->guardians()
+            ->wherePivot('receive_notifications', true)
+            ->whereNotNull('email')
+            ->get() ?? collect();
+
+        $waText = "📄 *Bulletin disponible* — " . ($student?->school?->name ?? config('app.name')) . "\n"
+            . "Le bulletin de " . ($student?->full_name ?? 'votre enfant') . " est publié.\n"
+            . "Connectez-vous à votre espace parent pour le consulter.";
+
+        foreach ($guardians as $guardian) {
+            try {
+                Mail::to($guardian->email)->send(new ReportCardPublishedMail($this->reportCard, $guardian));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('ReportCard publish mail failed: ' . $e->getMessage());
+            }
+            app(\App\Services\WhatsAppService::class)->notifyModel($guardian, $waText);
+        }
     }
 
     public function saveComments(): void
@@ -97,7 +153,7 @@ new #[Layout('layouts.app')] class extends Component {
         $schoolId = auth()->user()->school_id;
         $tpl      = ReportCardTemplate::forSchool($schoolId);
 
-        $avg           = $this->reportCard->average !== null ? (float)$this->reportCard->average : null;
+        $avg           = $this->reportCard->effectiveAverage();
         $generalMention = $this->mention($avg, $tpl);
 
         $subjectMentions = $this->reportCard->subjectGrades->mapWithKeys(function ($sg) use ($tpl) {
@@ -127,16 +183,21 @@ new #[Layout('layouts.app')] class extends Component {
                 </div>
             </x-slot:title>
             <x-slot:actions>
+                @php $st = $reportCard->statusEnum(); @endphp
+                <x-badge :value="$st->label()" class="badge-{{ $st->color() }} badge-sm" />
                 <x-button label="Imprimer" icon="o-printer"
                           onclick="window.print()"
                           class="btn-ghost btn-sm" />
-                @if($reportCard->is_published)
-                <x-button label="Dépublier" icon="o-eye-slash" wire:click="unpublish"
-                          class="btn-warning btn-sm" />
-                @else
-                <x-button label="Publier" icon="o-paper-airplane" wire:click="publish"
-                          wire:confirm="Publier ce bulletin ? Les tuteurs pourront le consulter."
-                          class="btn-success btn-sm" />
+                @if($reportCard->canReject(auth()->user()))
+                <x-button label="Rejeter" icon="o-x-mark" wire:click="$set('showReject', true)"
+                          class="btn-error btn-outline btn-sm" />
+                @endif
+                @if($reportCard->canAdvance(auth()->user()) && $st->next())
+                <x-button label="{{ $st->advanceLabel() }}"
+                          icon="{{ $st === \App\Enums\ReportCardStatus::APPROVED ? 'o-paper-airplane' : 'o-check' }}"
+                          wire:click="advanceWorkflow"
+                          wire:confirm="Confirmer : {{ $st->advanceLabel() }} ?"
+                          class="btn-success btn-sm" spinner="advanceWorkflow" />
                 @endif
             </x-slot:actions>
         </x-header>
@@ -190,7 +251,7 @@ new #[Layout('layouts.app')] class extends Component {
                     </div>
                     {{-- General average circle --}}
                     <div class="text-center shrink-0">
-                        @php $avg = $reportCard->average !== null ? (float)$reportCard->average : null; @endphp
+                        @php $avg = $reportCard->effectiveAverage(); @endphp
                         <div class="w-20 h-20 rounded-full border-4 flex flex-col items-center justify-center
                                     {{ $avg !== null && $avg >= 10 ? 'border-success' : ($avg !== null ? 'border-error' : 'border-base-300') }}
                                     print:w-16 print:h-16">
@@ -420,12 +481,14 @@ new #[Layout('layouts.app')] class extends Component {
                     @endif
                     <div class="flex justify-between items-center">
                         <span class="text-base-content/60">Statut</span>
-                        @if($reportCard->is_published)
-                        <x-badge value="Publié" class="badge-success badge-sm" />
-                        @else
-                        <x-badge value="Brouillon" class="badge-ghost badge-sm" />
-                        @endif
+                        @php $st = $reportCard->statusEnum(); @endphp
+                        <x-badge :value="$st->label()" class="badge-{{ $st->color() }} badge-sm" />
                     </div>
+                    @if($reportCard->rejection_reason)
+                    <div class="text-xs bg-error/10 text-error rounded-lg p-2">
+                        <span class="font-semibold">Motif du rejet :</span> {{ $reportCard->rejection_reason }}
+                    </div>
+                    @endif
                     @if($reportCard->published_at)
                     <div class="flex justify-between text-xs">
                         <span class="text-base-content/50">Publié le</span>
@@ -437,6 +500,42 @@ new #[Layout('layouts.app')] class extends Component {
                         <span>{{ $reportCard->created_at->format('d/m/Y') }}</span>
                     </div>
                 </div>
+            </x-card>
+
+            {{-- Workflow timeline --}}
+            <x-card title="Circuit de validation">
+                @php $steps = [
+                    ['Soumis',            $reportCard->submitted_at,          $reportCard->submitted_by],
+                    ['Validé pédagogie',  $reportCard->pedagogie_approved_at, $reportCard->pedagogie_approved_by],
+                    ['Validé finance',    $reportCard->finance_approved_at,   $reportCard->finance_approved_by],
+                    ['Approuvé direction',$reportCard->direction_approved_at, $reportCard->direction_approved_by],
+                    ['Publié',            $reportCard->published_at,          null],
+                ]; @endphp
+                <ol class="relative border-l border-base-200 ml-2 space-y-4">
+                    @foreach($steps as [$label, $at, $by])
+                    <li class="ml-4">
+                        <div class="absolute w-2.5 h-2.5 rounded-full -left-[5px] mt-1.5 {{ $at ? 'bg-success' : 'bg-base-300' }}"></div>
+                        <p class="text-sm font-semibold {{ $at ? '' : 'text-base-content/40' }}">{{ $label }}</p>
+                        @if($at)<p class="text-xs text-base-content/50">{{ \Illuminate\Support\Carbon::parse($at)->format('d/m/Y H:i') }}</p>@endif
+                    </li>
+                    @endforeach
+                </ol>
+                @if($reportCard->approvals->isNotEmpty())
+                <div class="mt-4 pt-3 border-t border-base-200 space-y-2">
+                    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Historique</p>
+                    @foreach($reportCard->approvals->take(6) as $ap)
+                    <div class="text-xs flex items-start gap-2">
+                        <x-icon name="{{ $ap->action === 'rejected' ? 'o-x-circle' : 'o-check-circle' }}"
+                                class="w-3.5 h-3.5 mt-0.5 {{ $ap->action === 'rejected' ? 'text-error' : 'text-success' }}" />
+                        <div>
+                            <span class="font-medium">{{ $ap->user?->name ?? '—' }}</span>
+                            <span class="text-base-content/50">· {{ $ap->action }} · {{ $ap->created_at->format('d/m H:i') }}</span>
+                            @if($ap->comment)<p class="text-base-content/50 italic">{{ $ap->comment }}</p>@endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
             </x-card>
 
             {{-- Mention scale --}}
@@ -478,6 +577,18 @@ new #[Layout('layouts.app')] class extends Component {
 
         </div>
     </div>
+
+    {{-- Reject modal --}}
+    <x-modal wire:model="showReject" title="Rejeter le bulletin" separator class="print:hidden">
+        <p class="text-sm text-base-content/60 mb-3">
+            Le bulletin retournera en brouillon et pourra être corrigé. Indiquez le motif (min. 5 caractères).
+        </p>
+        <x-textarea wire:model="rejectReason" rows="3" placeholder="Motif du rejet…" />
+        <x-slot:actions>
+            <x-button label="Annuler" wire:click="$set('showReject', false)" class="btn-ghost" />
+            <x-button label="Confirmer le rejet" icon="o-x-mark" wire:click="rejectWorkflow" class="btn-error" spinner="rejectWorkflow" />
+        </x-slot:actions>
+    </x-modal>
 </div>
 
 {{-- Print styles --}}
